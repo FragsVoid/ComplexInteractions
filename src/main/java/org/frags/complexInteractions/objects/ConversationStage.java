@@ -4,13 +4,13 @@ import java.util.List;
 
 public class ConversationStage {
 
-    private Conversation conversation;
+    private String conversation;
     private String id;
     private List<String> text;
     private long delay;
     private List<Option> optionList;
 
-    public ConversationStage(Conversation conversation, String id, List<String> text, long delay, List<Option> optionList) {
+    public ConversationStage(String conversation, String id, List<String> text, long delay, List<Option> optionList) {
         this.conversation = conversation;
         this.id = id;
         this.text = text;
@@ -18,7 +18,7 @@ public class ConversationStage {
         this.optionList = optionList;
     }
 
-    public Conversation getConversation() {
+    public String getConversation() {
         return conversation;
     }
 

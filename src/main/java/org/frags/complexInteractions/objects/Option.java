@@ -4,9 +4,9 @@ public class Option {
 
     private String id;
     private String text;
-    private ConversationStage nextStage;
+    private String nextStage;
 
-    public Option(String id, String text, ConversationStage nextStage) {
+    public Option(String id, String text, String nextStage) {
         this.id = id;
         this.text = text;
         this.nextStage = nextStage;
@@ -20,7 +20,7 @@ public class Option {
         return text;
     }
 
-    public ConversationStage getNextStage() {
+    public String getNextStage() {
         return nextStage;
     }
 }
