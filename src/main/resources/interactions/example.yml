@@ -1,0 +1,45 @@
+name: '&a&lExample NPC'
+starts_with: []
+block_movement: true
+slow_effect: false
+start_conversation_radius: 0
+end_conversation_radius: 5
+first_conversation: 'conversation1'
+no_requirement_conversation: 'fail'
+npc_name: "<blue>Zeus<gray>:"
+conversation:
+  conversation1:
+    dialogue:
+      dialogue1:
+        text:
+          - "&7Hello citizen, what can I do for you?"
+        time: 4
+    options:
+      option1:
+        text: "&eTell me about the city."
+        start_conversation: conversation2
+      option2:
+        text: "&eBye"
+        start_conversation: conversation3
+  conversation2:
+    dialogue:
+      dialogue1:
+        text:
+          - "&7Kryngel is one of the most important cities"
+          - "&7of the nation."
+        time: 4
+      dialogue2:
+        text:
+          - "&7If you are searching for adventures, you can talk to"
+          - "&7Bob in the inn. Anything else?"
+        time: 4
+  conversation3:
+    dialogue:
+      dialogue1:
+        text:
+          - "&7Good luck!"
+        time: 1
+  fail:
+    dialogue:
+      text:
+        - "[npc_name] You are too weak to speak with me."
