@@ -2,3 +2,10 @@ name: ComplexInteractions
 version: '1.0'
 main: org.frags.complexInteractions.ComplexInteractions
 api-version: '1.21'
+depend:
+  - Vault
+  - PlaceholderAPI
+softdepend:
+  - Oraxen
+  - MMOItems
+  - ItemsAdder

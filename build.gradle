@@ -12,10 +12,25 @@ repositories {
         name = "papermc-repo"
         url = "https://repo.papermc.io/repository/maven-public/"
     }
+    maven {
+        url = 'https://repo.extendedclip.com/releases/'
+    }
+    maven { url 'https://jitpack.io' }
+    maven {
+        url "https://repo.oraxen.com/releases"
+    }
+
+    maven {
+        url "https://maven.devs.beer/"
+    }
 }
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21-R0.1-SNAPSHOT")
+    compileOnly 'me.clip:placeholderapi:2.11.7'
+    compileOnly "com.github.MilkBowl:VaultAPI:1.7"
+    compileOnly("io.th0rgal:oraxen:1.196.0")
+    compileOnly("dev.lone:api-itemsadder:4.0.10")
 }
 
 tasks {

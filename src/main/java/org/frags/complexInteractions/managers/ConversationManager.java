@@ -4,9 +4,10 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.frags.complexInteractions.ComplexInteractions;
 import org.frags.complexInteractions.files.InteractionFile;
-import org.frags.complexInteractions.objects.Conversation;
-import org.frags.complexInteractions.objects.ConversationStage;
-import org.frags.complexInteractions.objects.Option;
+import org.frags.complexInteractions.objects.conversation.*;
+import org.frags.complexInteractions.objects.conversation.factories.ActionFactory;
+import org.frags.complexInteractions.objects.conversation.factories.RequirementFactory;
+import org.frags.complexInteractions.objects.conversation.interfaces.ItemProvider;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -27,6 +28,10 @@ public class ConversationManager {
         loadConversations();
     }
 
+    public Conversation getConversation(String id) {
+        return conversations.get(id);
+    }
+
     private void loadConversations() {
         conversations.clear();
 
@@ -38,26 +43,30 @@ public class ConversationManager {
         if (files == null)
             return;
 
+        ItemProvider itemProvider = null;
+
         for (String fileName : files) {
-            InteractionFile file = new InteractionFile(fileName, plugin);
+            String conversationId = fileName.replace(".yml", "");
+
+            InteractionFile file = new InteractionFile(conversationId, plugin);
             FileConfiguration config = file.getConfig();
 
             String npcId = config.getString("npc_id");
             boolean blockMovement = config.getBoolean("block_movement");
             boolean slowEffect = config.getBoolean("slow_effect");
-            int startConversationRadius = config.getInt("start_conversation_radius");
-            int endConversationRadius = config.getInt("end_conversation_radius");
+            int startRadius = config.getInt("start_conversation_radius");
+            int endRadius = config.getInt("end_conversation_radius");
 
-            String startConversationId = config.getString("first_conversation");
-            String noReqId = config.getString("no_requirement_conversation");
+            String startStageId = config.getString("first_conversation");
+            String noReqStageId = config.getString("no_requirement_conversation");
             String npcName = config.getString("npc_name");
+            long cooldown =  config.getLong("cooldown");
 
             ConfigurationSection convSection = config.getConfigurationSection("conversation");
-
-
             Map<String, ConversationStage> conversationStages = new HashMap<>();
-            for (String key : convSection.getKeys(false)) {
-                ConfigurationSection section = convSection.getConfigurationSection(key);
+
+            for (String stageKey : convSection.getKeys(false)) {
+                ConfigurationSection section = convSection.getConfigurationSection(stageKey);
                 ConfigurationSection dialogueSection =  section.getConfigurationSection("dialogue");
                 ConfigurationSection optionsSection =  section.getConfigurationSection("options");
 
@@ -68,25 +77,55 @@ public class ConversationManager {
 
                 for (String optionKey : optionsSection.getKeys(false)) {
                     ConfigurationSection optionSection = optionsSection.getConfigurationSection(optionKey);
+
                     String optionText = optionSection.getString("text");
                     String startConversation = optionSection.getString("start_conversation");
-                    optionList.add(new Option(optionKey, optionText, startConversation));
+
+                    List<String> rawActions = optionSection.getStringList("actions");
+                    List<Action> parsedActions = new ArrayList<>();
+
+                    String failMessage = optionSection.getString("fail_message");
+
+                    for (String line : rawActions) {
+                        Action act = ActionFactory.parse(line);
+                        if (act != null)
+                            parsedActions.add(act);
+                    }
+
+                    List<Requirement> parsedRequirements = new ArrayList<>();
+                    for (String line : optionSection.getStringList("requirements")) {
+                        Requirement req = RequirementFactory.parse(line, itemProvider, failMessage);
+                        if (req != null)
+                            parsedRequirements.add(req);
+                    }
+
+                    optionList.add(new Option(optionKey, optionText, startConversation, parsedActions, parsedRequirements));
                 }
 
-                conversationStages.put(key, new ConversationStage(fileName, key, text, delay, optionList));
+                conversationStages.put(stageKey, new ConversationStage(conversationId, stageKey, text, delay, optionList));
             }
 
-            List<String> interruptActions = config.getStringList("interrupt_actions");
+            List<Action> interruptActions = new ArrayList<>();
+            for (String line : config.getStringList("interrupt_actions")) {
+                Action act = ActionFactory.parse(line);
+                if (act != null)
+                    interruptActions.add(act);
+            }
 
-            List<String> requirements =  config.getStringList("requirements");
+            String failMessage = config.getString("fail_message");
 
-            long cooldown = config.getLong("cooldown");
+            List<Requirement> globalRequirements = new ArrayList<>();
+            for (String line : config.getStringList("requirements")) {
+                Requirement req = RequirementFactory.parse(line, itemProvider, failMessage);
+                if (req != null)
+                    globalRequirements.add(req);
+            }
 
-            Conversation conversation =
-                    new Conversation(fileName, npcId, blockMovement, slowEffect, startConversationRadius, endConversationRadius,
-                            startConversationId, noReqId, npcName, conversationStages, interruptActions, requirements, cooldown);
 
-            conversations.put(fileName, conversation);
+            Conversation conversation = new Conversation(
+                    conversationId, npcId, blockMovement, slowEffect, startRadius, endRadius, startStageId, noReqStageId,
+                    npcName, conversationStages, interruptActions, globalRequirements, cooldown
+            );
         }
     }
 

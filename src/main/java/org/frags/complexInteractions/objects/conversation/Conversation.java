@@ -1,4 +1,6 @@
-package org.frags.complexInteractions.objects;
+package org.frags.complexInteractions.objects.conversation;
+
+import org.bukkit.entity.Player;
 
 import java.util.List;
 import java.util.Map;
@@ -16,16 +18,16 @@ public class Conversation {
     private String npcName;
 
     private Map<String, ConversationStage> conversationStageMap;
-    private List<String> interruptActions;
+    private List<Action> interruptActions;
 
-    private List<String> requirements;
+    private List<Requirement> requirements;
 
     private long cooldown;
 
     public Conversation(String id, String npcId, boolean blockMovement, boolean slowEffect, long starConversationRadius,
                         long endConversationRadius, String startStageId, String noReqStageId, String npcName,
-                        Map<String, ConversationStage> conversationStageMap, List<String> interruptActions,
-                        List<String> requirements, long cooldown) {
+                        Map<String, ConversationStage> conversationStageMap, List<Action> interruptActions,
+                        List<Requirement> requirements, long cooldown) {
         this.id = id;
         this.npcId = npcId;
         this.blockMovement = blockMovement;
@@ -39,6 +41,14 @@ public class Conversation {
         this.interruptActions = interruptActions;
         this.requirements = requirements;
         this.cooldown = cooldown;
+    }
+
+    public boolean canStart(Player player) {
+        for (Requirement requirement : requirements) {
+            if (!requirement.check(player)) return false;
+        }
+
+        return true;aa
     }
 
     public String getId() {
@@ -81,11 +91,11 @@ public class Conversation {
         return conversationStageMap;
     }
 
-    public List<String> getInterruptActions() {
+    public List<Action> getInterruptActions() {
         return interruptActions;
     }
 
-    public List<String> getRequirements() {
+    public List<Requirement> getRequirements() {
         return requirements;
     }
 

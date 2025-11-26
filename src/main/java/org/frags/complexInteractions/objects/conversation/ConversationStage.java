@@ -1,4 +1,4 @@
-package org.frags.complexInteractions.objects;
+package org.frags.complexInteractions.objects.conversation;
 
 import java.util.List;
 
