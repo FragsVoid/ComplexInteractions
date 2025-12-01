@@ -48,7 +48,11 @@ public class Conversation {
             if (!requirement.check(player)) return false;
         }
 
-        return true;aa
+        return true;
+    }
+
+    public ConversationStage getStage(String stageId) {
+        return conversationStageMap.get(stageId);
     }
 
     public String getId() {

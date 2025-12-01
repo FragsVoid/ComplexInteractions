@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/ComplexInteractions.main.iml" filepath="$PROJECT_DIR$/.idea/modules/ComplexInteractions.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/org.frags.ComplexInteractions.main.iml" filepath="$PROJECT_DIR$/.idea/modules/org.frags.ComplexInteractions.main.iml" />
     </modules>
   </component>
 </project>

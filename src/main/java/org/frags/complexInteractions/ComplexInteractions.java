@@ -6,6 +6,7 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.frags.complexInteractions.files.TemplateFile;
 import org.frags.complexInteractions.managers.ConversationManager;
+import org.frags.complexInteractions.managers.SessionManager;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -15,6 +16,7 @@ import java.util.Map;
 public final class ComplexInteractions extends JavaPlugin {
 
     private ConversationManager conversationManager;
+    private SessionManager sessionManager;
 
     private static ComplexInteractions INSTANCE;
 
@@ -86,5 +88,9 @@ public final class ComplexInteractions extends JavaPlugin {
 
     public ConversationManager getConversationManager() {
         return conversationManager;
+    }
+
+    public SessionManager getSessionManager() {
+        return sessionManager;
     }
 }
