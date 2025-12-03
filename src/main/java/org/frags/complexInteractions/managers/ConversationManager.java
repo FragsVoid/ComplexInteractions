@@ -126,6 +126,7 @@ public class ConversationManager {
                     conversationId, npcId, blockMovement, slowEffect, startRadius, endRadius, startStageId, noReqStageId,
                     npcName, conversationStages, interruptActions, globalRequirements, cooldown
             );
+            conversations.put(npcId, conversation);
         }
     }
 

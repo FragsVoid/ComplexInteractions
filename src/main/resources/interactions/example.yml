@@ -1,4 +1,4 @@
-npc_id: []
+npc_id: "rtp"
 block_movement: true
 slow_effect: false
 start_conversation_radius: 0

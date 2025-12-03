@@ -4,7 +4,9 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.frags.complexInteractions.commands.TestCommand;
 import org.frags.complexInteractions.files.TemplateFile;
+import org.frags.complexInteractions.listener.NpcInteractionListener;
 import org.frags.complexInteractions.managers.ConversationManager;
 import org.frags.complexInteractions.managers.SessionManager;
 
@@ -39,6 +41,9 @@ public final class ComplexInteractions extends JavaPlugin {
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
+
+        getCommand("test").setExecutor(new TestCommand());
+        getServer().getPluginManager().registerEvents(new NpcInteractionListener(conversationManager, sessionManager), this);
     }
 
     @Override

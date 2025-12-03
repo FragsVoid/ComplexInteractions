@@ -9,3 +9,6 @@ softdepend:
   - Oraxen
   - MMOItems
   - ItemsAdder
+commands:
+  test:
+    description: "test"

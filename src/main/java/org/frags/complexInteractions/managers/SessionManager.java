@@ -3,6 +3,8 @@ package org.frags.complexInteractions.managers;
 import org.bukkit.entity.Player;
 import org.frags.complexInteractions.ComplexInteractions;
 import org.frags.complexInteractions.objects.Session;
+import org.frags.complexInteractions.objects.conversation.Conversation;
+import org.frags.complexInteractions.objects.conversation.ConversationStage;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -10,26 +12,50 @@ import java.util.UUID;
 
 public class SessionManager {
 
-    private ComplexInteractions plugin;
+    private final ConversationManager conversationManager;
 
-    private Map<UUID, Session> sessions;
+    private final Map<UUID, Session> activeSessions = new HashMap<>();
+    private final ComplexInteractions plugin;
 
-    public SessionManager(ComplexInteractions plugin) {
+    public SessionManager(ConversationManager conversationManager, ComplexInteractions plugin) {
+        this.conversationManager = conversationManager;
         this.plugin = plugin;
-        this.sessions = new HashMap<>();
     }
 
 
-    public void addPlayer(Player player) {
-        sessions.put(player.getUniqueId(), new Session(player, null));
+    public void startSession(Player player, String conversationId) {
+        if (activeSessions.containsKey(player.getUniqueId())) {
+            player.sendMessage(ComplexInteractions.miniMessage.deserialize(plugin.getMessage("already_in_conversation")));
+            return;
+        }
+
+
+        Conversation conversation = conversationManager.getConversation(conversationId);
+        if (conversation == null) return;
+
+        Session session = new Session(player, conversation, this);
+
+        if (!conversation.canStart(player)) {
+            ConversationStage noReqConversation = conversation.getConversationStageMap().get(conversation.getNoReqStageId());
+            if (noReqConversation == null) return;
+
+            session.startStage(noReqConversation);
+            return;
+        }
+
+        activeSessions.put(player.getUniqueId(), session);
+        session.startStage(conversation.getConversationStageMap().get(conversation.getStartStageId()));
     }
 
-    public void removePlayer(Player player) {
-        sessions.remove(player.getUniqueId());
+    public void endSession(Player player) {
+        activeSessions.remove(player.getUniqueId());
     }
 
     public Session getSession(Player player) {
-        return sessions.get(player.getUniqueId());
+        return activeSessions.get(player.getUniqueId());
     }
 
+    public boolean isConversing(Player player) {
+        return activeSessions.containsKey(player.getUniqueId());
+    }
 }
