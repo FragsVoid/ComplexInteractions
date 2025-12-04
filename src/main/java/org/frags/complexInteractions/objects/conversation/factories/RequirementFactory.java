@@ -9,6 +9,7 @@ import org.frags.complexInteractions.objects.conversation.matchers.MaterialMatch
 import org.frags.complexInteractions.objects.conversation.matchers.ModelDataMatcher;
 import org.frags.complexInteractions.objects.conversation.matchers.NormalMatcher;
 import org.frags.complexInteractions.objects.conversation.matchers.PDCMatcher;
+import org.frags.complexInteractions.objects.conversation.requirements.ConditionRequirement;
 import org.frags.complexInteractions.objects.conversation.requirements.ItemRequirement;
 import org.frags.complexInteractions.objects.conversation.requirements.PermissionRequirement;
 
@@ -22,6 +23,10 @@ public class RequirementFactory {
 
         if (line.startsWith("has_permission:")) {
             return new PermissionRequirement(failMessage, line.replace("has_permission:", ""));
+        }
+
+        if (line.startsWith("condition:")) {
+            return new ConditionRequirement(failMessage, line.replace("condition:", ""));
         }
 
         return null;

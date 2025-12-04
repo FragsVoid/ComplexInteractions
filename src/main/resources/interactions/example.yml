@@ -1,47 +1,41 @@
-npc_id: "rtp"
+npc_id: "rtp2"
 block_movement: true
 slow_effect: false
 start_conversation_radius: 0
 end_conversation_radius: 5
 first_conversation: 'conversation1'
 no_requirement_conversation: 'fail'
+cooldown_conversation: '<red>Wait <white>%time% <red>before talking to me!'
 npc_name: "<blue>Zeus<gray>:"
 cooldown: 3600
 interrupt_actions:
   - "message:mission cancelled because you went too far!"
 requirements:
-  - "%level% < 10"
+  - "condition:15 < 10"
 conversation:
   conversation1:
     dialogue:
       text:
-        - "&7Hello citizen, what can I do for you?"
-      delay: 4
+        - "<gray>Hello citizen, what can I do for you?"
+      delay: 1
     options:
       option1:
-        text: "&eTell me about the city."
+        text: "<yellow>Tell me about the city."
         start_conversation: conversation2
       option2:
-        text: "&eBye"
+        text: "<yellow>Bye"
         start_conversation: conversation3
   conversation2:
     dialogue:
-      dialogue1:
-        text:
-          - "&7Kryngel is one of the most important cities"
-          - "&7of the nation."
-        time: 4
-      dialogue2:
-        text:
-          - "&7If you are searching for adventures, you can talk to"
-          - "&7Bob in the inn. Anything else?"
-        time: 4
+      text:
+        - "&7Kryngel is one of the most important cities"
+        - "&7of the nation."
+      delay: 1
   conversation3:
     dialogue:
-      dialogue1:
-        text:
-          - "&7Good luck!"
-        time: 1
+      text:
+        - "&7Good luck!"
+      delay: 1
   fail:
     dialogue:
       text:

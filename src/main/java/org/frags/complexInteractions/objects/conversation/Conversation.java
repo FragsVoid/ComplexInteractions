@@ -15,6 +15,7 @@ public class Conversation {
     private long endConversationRadius;
     private String startStageId;
     private String noReqStageId;
+    private String cooldownMessage;
     private String npcName;
 
     private Map<String, ConversationStage> conversationStageMap;
@@ -27,7 +28,7 @@ public class Conversation {
     public Conversation(String id, String npcId, boolean blockMovement, boolean slowEffect, long starConversationRadius,
                         long endConversationRadius, String startStageId, String noReqStageId, String npcName,
                         Map<String, ConversationStage> conversationStageMap, List<Action> interruptActions,
-                        List<Requirement> requirements, long cooldown) {
+                        List<Requirement> requirements, long cooldown, String cooldownMessage) {
         this.id = id;
         this.npcId = npcId;
         this.blockMovement = blockMovement;
@@ -41,6 +42,7 @@ public class Conversation {
         this.interruptActions = interruptActions;
         this.requirements = requirements;
         this.cooldown = cooldown;
+        this.cooldownMessage = cooldownMessage;
     }
 
     public boolean canStart(Player player) {
@@ -53,6 +55,10 @@ public class Conversation {
 
     public ConversationStage getStage(String stageId) {
         return conversationStageMap.get(stageId);
+    }
+
+    public String getCooldownMessage() {
+        return cooldownMessage;
     }
 
     public String getId() {

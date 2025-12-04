@@ -29,6 +29,8 @@ repositories {
 
 }
 
+
+
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21-R0.1-SNAPSHOT")
     compileOnly 'me.clip:placeholderapi:2.11.7'
@@ -37,6 +39,11 @@ dependencies {
     compileOnly("dev.lone:api-itemsadder:4.0.10")
     compileOnly("de.oliver:FancyNpcs:2.8.1")
 }
+
+tasks.named('jar') {
+    destinationDirectory = file("C:\\Users\\adriw\\Desktop\\servers\\survival\\plugins")
+}
+
 
 tasks {
     runServer {

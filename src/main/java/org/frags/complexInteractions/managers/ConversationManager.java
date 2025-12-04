@@ -2,6 +2,7 @@ package org.frags.complexInteractions.managers;
 
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.frags.complexInteractions.ComplexInteractions;
 import org.frags.complexInteractions.files.InteractionFile;
 import org.frags.complexInteractions.objects.conversation.*;
@@ -32,12 +33,21 @@ public class ConversationManager {
         return conversations.get(id);
     }
 
+    public List<Conversation> getAllConversations() {
+        return new ArrayList<>(conversations.values());
+    }
+
     private void loadConversations() {
         conversations.clear();
 
         File folder = new File(plugin.getDataFolder(), "interactions");
-        if (!folder.exists())
-            folder.mkdirs();
+        if (!folder.exists()) {
+            try {
+                plugin.saveResource("interactions/example.yml", false);
+            } catch (IllegalArgumentException e) {
+                plugin.getLogger().severe("Didn't find example.yml");
+            }
+        }
 
         String[] files = folder.list();
         if (files == null)
@@ -48,8 +58,8 @@ public class ConversationManager {
         for (String fileName : files) {
             String conversationId = fileName.replace(".yml", "");
 
-            InteractionFile file = new InteractionFile(conversationId, plugin);
-            FileConfiguration config = file.getConfig();
+            File targetFile = new File(folder, fileName);
+            FileConfiguration config = YamlConfiguration.loadConfiguration(targetFile);
 
             String npcId = config.getString("npc_id");
             boolean blockMovement = config.getBoolean("block_movement");
@@ -61,6 +71,8 @@ public class ConversationManager {
             String noReqStageId = config.getString("no_requirement_conversation");
             String npcName = config.getString("npc_name");
             long cooldown =  config.getLong("cooldown");
+
+            String cooldownStageId = config.getString("cooldown_conversation");
 
             ConfigurationSection convSection = config.getConfigurationSection("conversation");
             Map<String, ConversationStage> conversationStages = new HashMap<>();
@@ -74,32 +86,33 @@ public class ConversationManager {
                 long delay = dialogueSection.getLong("delay");
 
                 List<Option> optionList = new ArrayList<>();
+                if (optionsSection != null) {
+                    for (String optionKey : optionsSection.getKeys(false)) {
+                        ConfigurationSection optionSection = optionsSection.getConfigurationSection(optionKey);
 
-                for (String optionKey : optionsSection.getKeys(false)) {
-                    ConfigurationSection optionSection = optionsSection.getConfigurationSection(optionKey);
+                        String optionText = optionSection.getString("text");
+                        String startConversation = optionSection.getString("start_conversation");
 
-                    String optionText = optionSection.getString("text");
-                    String startConversation = optionSection.getString("start_conversation");
+                        List<String> rawActions = optionSection.getStringList("actions");
+                        List<Action> parsedActions = new ArrayList<>();
 
-                    List<String> rawActions = optionSection.getStringList("actions");
-                    List<Action> parsedActions = new ArrayList<>();
+                        String failMessage = optionSection.getString("fail_message");
 
-                    String failMessage = optionSection.getString("fail_message");
+                        for (String line : rawActions) {
+                            Action act = ActionFactory.parse(line);
+                            if (act != null)
+                                parsedActions.add(act);
+                        }
 
-                    for (String line : rawActions) {
-                        Action act = ActionFactory.parse(line);
-                        if (act != null)
-                            parsedActions.add(act);
+                        List<Requirement> parsedRequirements = new ArrayList<>();
+                        for (String line : optionSection.getStringList("requirements")) {
+                            Requirement req = RequirementFactory.parse(line, itemProvider, failMessage);
+                            if (req != null)
+                                parsedRequirements.add(req);
+                        }
+
+                        optionList.add(new Option(optionKey, optionText, startConversation, parsedActions, parsedRequirements));
                     }
-
-                    List<Requirement> parsedRequirements = new ArrayList<>();
-                    for (String line : optionSection.getStringList("requirements")) {
-                        Requirement req = RequirementFactory.parse(line, itemProvider, failMessage);
-                        if (req != null)
-                            parsedRequirements.add(req);
-                    }
-
-                    optionList.add(new Option(optionKey, optionText, startConversation, parsedActions, parsedRequirements));
                 }
 
                 conversationStages.put(stageKey, new ConversationStage(conversationId, stageKey, text, delay, optionList));
@@ -124,7 +137,7 @@ public class ConversationManager {
 
             Conversation conversation = new Conversation(
                     conversationId, npcId, blockMovement, slowEffect, startRadius, endRadius, startStageId, noReqStageId,
-                    npcName, conversationStages, interruptActions, globalRequirements, cooldown
+                    npcName, conversationStages, interruptActions, globalRequirements, cooldown, cooldownStageId
             );
             conversations.put(npcId, conversation);
         }

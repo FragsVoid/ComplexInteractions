@@ -1,2 +1,3 @@
 no_money: "<red>You do not have enough money!"
 already_in_conversation: "<red>You already are in a conversation!"
+no_permission: "<red>You don't have the required permission"

@@ -10,5 +10,5 @@ softdepend:
   - MMOItems
   - ItemsAdder
 commands:
-  test:
-    description: "test"
+  interactions:
+    description: "Main command of the plugin"
