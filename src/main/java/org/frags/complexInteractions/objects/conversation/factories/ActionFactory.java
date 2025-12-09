@@ -4,10 +4,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.frags.complexInteractions.ComplexInteractions;
 import org.frags.complexInteractions.objects.conversation.Action;
-import org.frags.complexInteractions.objects.conversation.actions.AddMoneyAction;
-import org.frags.complexInteractions.objects.conversation.actions.CommandAction;
-import org.frags.complexInteractions.objects.conversation.actions.RemoveMoneyAction;
-import org.frags.complexInteractions.objects.conversation.actions.SoundAction;
+import org.frags.complexInteractions.objects.conversation.actions.*;
 
 public class ActionFactory {
 
@@ -51,6 +48,16 @@ public class ActionFactory {
             return new RemoveMoneyAction(ComplexInteractions.getInstance(),  amount);
         }
 
+        if (configLine.startsWith("[message]")) {
+            //[message]<red>Hello!
+            String message =  configLine.replace("[message]", "");
+            return new MessageAction(ComplexInteractions.miniMessage.deserialize(message));
+        }
+
+        if (configLine.startsWith("message:")) {
+            String message = configLine.replace("message:", "");
+            return new MessageAction(ComplexInteractions.miniMessage.deserialize(message));
+        }
 
         return null;
     }

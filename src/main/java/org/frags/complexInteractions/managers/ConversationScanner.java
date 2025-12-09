@@ -26,8 +26,6 @@ public class ConversationScanner extends BukkitRunnable {
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (sessionManager.isConversing(player)) {
                 checkEndRadius(player);
-            } else {
-                checkStartRadius(player);
             }
         }
     }
@@ -45,6 +43,7 @@ public class ConversationScanner extends BukkitRunnable {
         Location loc = npc.getData().getLocation();
 
         if (player.getLocation().distanceSquared(loc) > (maxDist * maxDist)) {
+            session.setEnded(true);
             for (Action action : conversation.getInterruptActions()) {
                 action.execute(player);
             }
@@ -55,15 +54,14 @@ public class ConversationScanner extends BukkitRunnable {
 
         for (Conversation conversation : conversationManager.getAllConversations()) {
             long startDist = conversation.getStarConversationRadius();
-            if  (startDist <= 0) return;
+            if  (startDist <= 0) continue;
 
             Npc npc = FancyNpcsPlugin.get().getNpcManager().getNpc(conversation.getNpcId());
-            if (npc == null) return;
+            if (npc == null) continue;
 
             Location loc = npc.getData().getLocation();
-
-            if (player.getLocation().distanceSquared(loc) > (startDist *startDist)) {
-                sessionManager.startSession(player, conversation.getId());
+            if (player.getLocation().distanceSquared(loc) < (startDist * startDist)) {
+                sessionManager.startSession(player, conversation.getNpcId());
                 return;
             }
         }

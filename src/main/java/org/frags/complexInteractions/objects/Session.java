@@ -35,6 +35,7 @@ public class Session {
     private ConversationStage stage;
     private final SessionManager sessionManager;
     private Player player;
+    private boolean ended = false;
 
     public Session(Player player, Conversation conversation, SessionManager sessionManager) {
         this.conversation = conversation;
@@ -46,9 +47,7 @@ public class Session {
         if (conversation == null) return;
 
         for (Requirement requirement : conversation.getRequirements()) {
-            System.out.println("a");
             if (!requirement.check(player)) {
-                System.out.println("b");
                 this.stage = conversation.getStage(conversation.getNoReqStageId());
                 startConversationStage(stage);
                 return;
@@ -71,6 +70,10 @@ public class Session {
         List<String> messages = stage.getText();
 
         for (int i = 0; i < messages.size(); i++) {
+            if (isEnded()) {
+                sessionManager.endSession(player, false);
+                return;
+            }
             final String message = messages.get(i);
             Bukkit.getScheduler().runTaskLater(ComplexInteractions.getInstance(), () -> {
                 player.sendMessage(MiniMessage.miniMessage().deserialize(message));
@@ -82,6 +85,10 @@ public class Session {
         }
 
         Bukkit.getScheduler().runTaskLater(ComplexInteractions.getInstance(), () -> {
+            if (isEnded()) {
+                sessionManager.endSession(player, false);
+                return;
+            }
             manageOptions(stage);
         }, stage.getDelay() * messages.size() * 20 + stage.getDelay() * 20);
 
@@ -93,9 +100,14 @@ public class Session {
         AtomicBoolean alreadyClicked = new AtomicBoolean(false);
 
         for (int i = 0; i < options.size(); i++) {
+            if (isEnded()) {
+                sessionManager.endSession(player, false);
+                return;
+            }
             Option option = options.get(i);
             Bukkit.getScheduler().runTaskLater(ComplexInteractions.getInstance(), () -> {
                 if (!option.hasRequirements(player)) return;
+                if (!sessionManager.isConversing(player)) return;
 
                 Component optionText = MiniMessage.miniMessage().deserialize(option.getText());
 
@@ -125,6 +137,17 @@ public class Session {
 
                 player.sendMessage(finalMessage);
             }, stage.getDelay() * i * 20);
+        }
+    }
+
+    public boolean isEnded() {
+        return ended;
+    }
+
+    public void setEnded(boolean ended) {
+        this.ended = ended;
+        if (ended) {
+            sessionManager.endSession(player, false);
         }
     }
 

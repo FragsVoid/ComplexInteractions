@@ -3,11 +3,9 @@ package org.frags.complexInteractions.managers;
 import org.bukkit.configuration.ConfigurationSection;
 import org.frags.complexInteractions.ComplexInteractions;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.logging.Level;
 
 public class CooldownManager {
 
@@ -25,15 +23,30 @@ public class CooldownManager {
         if (!cooldowns.containsKey(playerUUID)) return false;
 
         Map<String, Long> cooldown = cooldowns.get(playerUUID);
-        if (!cooldown.containsKey(cooldownId)) return false;
 
-        return System.currentTimeMillis() < cooldown.get(cooldownId);
+        Long expiry = cooldown.get(cooldownId);
+        if (expiry == null) return false;
+
+        if (System.currentTimeMillis() >= expiry) {
+            cooldown.remove(cooldownId);
+            if (cooldown.isEmpty()) cooldowns.remove(playerUUID);
+            return false;
+        }
+
+        return true;
     }
 
     public long getRemainingSeconds(UUID playerUUID,  String cooldownId) {
         if (!isOnCooldown(playerUUID, cooldownId)) return 0;
         long diff = cooldowns.get(playerUUID).get(cooldownId) - System.currentTimeMillis();
         return diff / 1000;
+    }
+
+    public void resetCooldown(UUID playerUUID, String cooldownId) {
+        Map<String, Long> cooldown = cooldowns.get(playerUUID);
+        if (cooldown == null) return;
+        cooldown.remove(cooldownId);
+        if (cooldown.isEmpty()) cooldowns.remove(playerUUID);
     }
 
     public void setCooldown(UUID playerUUID, String cooldownId, long seconds) {
@@ -82,11 +95,13 @@ public class CooldownManager {
                 ConfigurationSection playerSection = section.getConfigurationSection(uuidString);
 
                 if (playerSection == null) continue;
+
                 for (String cooldownId : playerSection.getKeys(false)) {
                     long expiry = playerSection.getLong(cooldownId);
 
                     if (expiry > now) {
-                        this.setCooldown(uuid, cooldownId, expiry);
+                        cooldowns.computeIfAbsent(uuid, k -> new HashMap<>())
+                                .put(cooldownId, expiry);
                     }
                 }
             } catch (IllegalArgumentException e) {

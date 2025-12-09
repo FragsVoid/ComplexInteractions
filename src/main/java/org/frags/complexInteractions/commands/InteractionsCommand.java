@@ -6,6 +6,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.frags.complexInteractions.ComplexInteractions;
 import org.frags.complexInteractions.commands.subcommands.ReloadCommand;
+import org.frags.complexInteractions.commands.subcommands.ResetCooldownCommand;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -20,6 +21,7 @@ public class InteractionsCommand implements CommandExecutor {
     public InteractionsCommand(ComplexInteractions plugin) {
         this.plugin = plugin;
         subCommands.add(new ReloadCommand());
+        subCommands.add(new ResetCooldownCommand());
     }
 
     @Override
@@ -32,7 +34,7 @@ public class InteractionsCommand implements CommandExecutor {
                     subCommand.perform(plugin, player, args);
                 }
             }
-        } else if (args.length == 0) {
+        } else {
             player.sendMessage("--------------------------------");
             for (SubCommand subCommand : subCommands) {
                 player.sendMessage(subCommand.getSyntax() + " - " + subCommand.getDescription());

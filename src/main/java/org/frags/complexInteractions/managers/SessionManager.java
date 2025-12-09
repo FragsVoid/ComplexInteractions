@@ -27,9 +27,7 @@ public class SessionManager {
     public void startSession(Player player, String conversationId) {
 
         Conversation conversation = conversationManager.getConversation(conversationId);
-
         if (conversation == null) return;
-
         if (activeSessions.containsKey(player.getUniqueId())) {
             player.sendMessage(ComplexInteractions.miniMessage.deserialize(plugin.getMessage("already_in_conversation")));
             return;
@@ -67,11 +65,10 @@ public class SessionManager {
         Session session = activeSessions.remove(player.getUniqueId());
         if (session != null) {
             session.cleanup();
-
             if (completed) {
                 long cooldownTime = session.getConversation().getCooldown();
                 if (cooldownTime > 0) {
-                    plugin.getCooldownManager().setCooldown(player.getUniqueId(), session.getConversation().getId(), cooldownTime);
+                    plugin.getCooldownManager().setCooldown(player.getUniqueId(), session.getConversation().getNpcId(), cooldownTime);
                 }
             }
         }
