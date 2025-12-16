@@ -50,6 +50,14 @@ public class ConversationStage {
         return delay;
     }
 
+    public void setDelay(long delay) {
+        this.delay = delay;
+    }
+
+    public void setCompletesConversation(String completesConversation) {
+        this.completesConversation = completesConversation;
+    }
+
     public List<Option> getOptionList() {
         return optionList;
     }

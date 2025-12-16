@@ -1,16 +1,22 @@
 package org.frags.complexInteractions.managers;
 
+import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.util.BoundingBox;
 import org.frags.complexInteractions.ComplexInteractions;
 import org.frags.complexInteractions.files.InteractionFile;
 import org.frags.complexInteractions.objects.conversation.*;
 import org.frags.complexInteractions.objects.conversation.factories.ActionFactory;
 import org.frags.complexInteractions.objects.conversation.factories.RequirementFactory;
 import org.frags.complexInteractions.objects.conversation.interfaces.ItemProvider;
+import org.frags.complexInteractions.objects.walking.WalkingObject;
+import org.frags.complexInteractions.objects.walking.Waypoints;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,6 +35,19 @@ public class ConversationManager {
 
         conversations = new HashMap<>();
         loadConversations();
+    }
+
+    public void addConversation(String npcId, Conversation conversation) {
+        conversations.put(npcId, conversation);
+    }
+
+    public boolean fileExists(String file) {
+        for (Conversation c : conversations.values()) {
+            if (c.getId().equalsIgnoreCase(file)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public Conversation getConversation(String id) {
@@ -167,6 +186,120 @@ public class ConversationManager {
                     alreadyCompletedStageId
             );
             conversations.put(npcId, conversation);
+        }
+    }
+
+    public void save() {
+        File folder = new File(plugin.getDataFolder(), "interactions");
+        if (!folder.exists()) {
+            folder.mkdirs();
+        }
+
+        List<String> currentIds = new ArrayList<>();
+
+        for (Conversation conversation : conversations.values()) {
+            String conversationId = conversation.getId();
+            currentIds.add(conversationId);
+
+            File file = new File(folder, conversationId + ".yml");
+            try {
+                if (!file.exists()) {
+                    if (!file.createNewFile())
+                        file.createNewFile();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            FileConfiguration config = YamlConfiguration.loadConfiguration(file);
+
+            for (String key : config.getKeys(false)) {
+                config.set(key, null);
+            }
+
+            config.set("npc_id", conversation.getNpcId());
+            config.set("block_movement", conversation.isBlockMovement());
+            config.set("slow_effect", conversation.isSlowEffect());
+            config.set("start_conversation_radius", conversation.getStarConversationRadius());
+            config.set("end_conversation_radius", conversation.getEndConversationRadius());
+
+            config.set("first_conversation", conversation.getStartStageId());
+            config.set("no_requirement_conversation", conversation.getNoReqStageId());
+            config.set("npc_name", conversation.getNpcName());
+
+            config.set("cooldown", conversation.getCooldown());
+            config.set("cooldown_conversation", conversation.getCooldownMessage());
+
+            config.set("only_once", conversation.isOnlyOnce());
+            config.set("already_completed_id", conversation.getAlreadyCompletedStageId());
+
+            config.set("fail_message", "You cannot talk to this NPC yet.");
+
+            List<String> globalReqs = new ArrayList<>();
+            for (Requirement req : conversation.getRequirements()) {
+                globalReqs.add(req.toString());
+            }
+            config.set("requirements", globalReqs);
+
+            List<String> interruptActions = new ArrayList<>();
+            for (Action action : conversation.getInterruptActions()) {
+                interruptActions.add(action.toString());
+            }
+            config.set("interrupt_actions", interruptActions);
+
+            ConfigurationSection convSection = config.createSection("conversation");
+
+            for (Map.Entry<String, ConversationStage> stageEntry : conversation.getConversationStageMap().entrySet()) {
+                String stageKey = stageEntry.getKey();
+                ConversationStage stage = stageEntry.getValue();
+
+                ConfigurationSection stageSection = convSection.createSection(stageKey);
+
+                stageSection.set("completes_conversation", stage.getCompletesConversation());
+
+                List<String> stageActions = new ArrayList<>();
+                for (Action act : stage.getActions()) {
+                    stageActions.add(act.toString());
+                }
+                stageSection.set("actions", stageActions);
+
+                ConfigurationSection dialogueSection = stageSection.createSection("dialogue");
+                dialogueSection.set("text", stage.getText());
+                dialogueSection.set("delay", stage.getDelay());
+
+                List<Option> options = stage.getOptionList();
+                if (options != null && !options.isEmpty()) {
+                    ConfigurationSection optionsSection = stageSection.createSection("options");
+
+                    for (Option option : options) {
+                        ConfigurationSection optSection = optionsSection.createSection(option.getId());
+
+                        optSection.set("text", option.getText());
+                        optSection.set("start_conversation", option.getNextStage());
+                        optSection.set("no_requirement", option.getNoRequirementId());
+
+                        List<String> optActions = new ArrayList<>();
+                        for (Action act : option.getOnClickActions()) {
+                            optActions.add(act.toString());
+                        }
+                        optSection.set("actions", optActions);
+
+                        List<String> optReqs = new ArrayList<>();
+                        for (Requirement req : option.getRequirements()) {
+                            optReqs.add(req.toString());
+                        }
+                        optSection.set("requirements", optReqs);
+                    }
+                }
+            }
+
+
+
+            try {
+                config.save(file);
+            } catch (IOException e) {
+                plugin.getLogger().severe("Could not save file: " + file.getName());
+                e.printStackTrace();
+            }
         }
     }
 

@@ -68,7 +68,7 @@ public class ActionFactory {
             if (newName.startsWith("preset:")) {
                 String preset = newName.replace("preset:", "");
                 String[] parts = preset.split(" ");
-                return new RemoveItemAction(ComplexInteractions.getInstance().getItemManager().getItem(parts[0]), Integer.parseInt(parts[1]));
+                return new RemoveItemAction(ComplexInteractions.getInstance().getItemManager().getItem(parts[0]), Integer.parseInt(parts[1]), preset);
             } else {
                 String[] parts = newName.split(" ");
                 Material material = Material.matchMaterial(parts[0].toUpperCase());
@@ -77,7 +77,7 @@ public class ActionFactory {
                     return null;
                 }
 
-                return new RemoveItemAction(new ItemStack(material), Integer.parseInt(parts[1]));
+                return new RemoveItemAction(new ItemStack(material), Integer.parseInt(parts[1]), null);
             }
         }
 

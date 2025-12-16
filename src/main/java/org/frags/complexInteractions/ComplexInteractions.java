@@ -82,6 +82,7 @@ public final class ComplexInteractions extends JavaPlugin {
             cooldownManager.saveCooldowns();
             sessionManager.saveAllConversations();
             walkingManager.save();
+            conversationManager.save();
         }, 12000L, 12000L);
 
     }
@@ -100,6 +101,10 @@ public final class ComplexInteractions extends JavaPlugin {
         if (walkingManager != null) {
             walkingManager.getNpcAIMover().cancelAll();
             walkingManager.save();
+        }
+
+        if (conversationManager != null) {
+            conversationManager.save();
         }
     }
 

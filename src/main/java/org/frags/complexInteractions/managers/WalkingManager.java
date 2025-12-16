@@ -55,6 +55,10 @@ public class WalkingManager {
         return walkingObjectMap.keySet();
     }
 
+    public void addWalkingObject(String file, WalkingObject walkingObject) {
+        walkingObjectMap.put(file, walkingObject);
+    }
+
     public void load(boolean reloads) {
         walkingObjectMap.clear();
 
@@ -151,6 +155,15 @@ public class WalkingManager {
             WalkingObject obj = entry.getValue();
 
             File file = new File(folder, walkingPathId + ".yml");
+            try {
+                if (!file.exists()) {
+                    if (!file.createNewFile())
+                        file.createNewFile();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
             FileConfiguration config = YamlConfiguration.loadConfiguration(file);
 
             config.set("npcId", obj.getNpcId());
@@ -203,23 +216,6 @@ public class WalkingManager {
                 e.printStackTrace();
             }
         }
-
-        File[] files = folder.listFiles();
-        if (files != null) {
-            for (File file : files) {
-                if (!file.getName().endsWith(".yml")) continue;
-
-                String idFromFile = file.getName().replace(".yml", "");
-
-                if (!walkingObjectMap.containsKey(idFromFile)) {
-                    if (file.delete()) {
-                        plugin.getLogger().info("Removed file: " + file.getName());
-                    }
-                }
-            }
-        }
-
-        plugin.getLogger().info("Every route have been saved.");
     }
 
 

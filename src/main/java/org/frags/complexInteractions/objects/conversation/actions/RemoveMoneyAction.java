@@ -27,4 +27,9 @@ public class RemoveMoneyAction extends Action {
         economy.withdrawPlayer(player, price);
         return true;
     }
+
+    @Override
+    public String toString() {
+        return "[removemoney]" + price;
+    }
 }

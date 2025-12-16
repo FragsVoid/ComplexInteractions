@@ -16,4 +16,9 @@ public class PermissionRequirement extends Requirement {
     public boolean check(Player player) {
         return player.hasPermission(permissionNode);
     }
+
+    @Override
+    public String toString() {
+        return "has_permission:" + permissionNode;
+    }
 }

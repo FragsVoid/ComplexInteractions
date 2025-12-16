@@ -2,8 +2,10 @@ package org.frags.complexInteractions.objects.conversation;
 
 import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class Conversation {
 
@@ -125,6 +127,70 @@ public class Conversation {
 
     public long getCooldown() {
         return cooldown;
+    }
+
+    public void addConversationStage(String stageId, ConversationStage conversationStage) {
+        conversationStageMap.put(stageId, conversationStage);
+    }
+
+    public void addRequirement(Requirement requirement) {
+        requirements.add(requirement);
+    }
+
+    public void addInterruptAction(Action action) {
+        interruptActions.add(action);
+    }
+
+    public List<ConversationStage> getConversationStages() {
+        return new ArrayList<>(conversationStageMap.values());
+    }
+
+    public void setNpcId(String npcId) {
+        this.npcId = npcId;
+    }
+
+    public void setBlockMovement(boolean blockMovement) {
+        this.blockMovement = blockMovement;
+    }
+
+    public void setSlowEffect(boolean slowEffect) {
+        this.slowEffect = slowEffect;
+    }
+
+    public void setStarConversationRadius(long starConversationRadius) {
+        this.starConversationRadius = starConversationRadius;
+    }
+
+    public void setEndConversationRadius(long endConversationRadius) {
+        this.endConversationRadius = endConversationRadius;
+    }
+
+    public void setStartStageId(String startStageId) {
+        this.startStageId = startStageId;
+    }
+
+    public void setNoReqStageId(String noReqStageId) {
+        this.noReqStageId = noReqStageId;
+    }
+
+    public void setCooldownMessage(String cooldownMessage) {
+        this.cooldownMessage = cooldownMessage;
+    }
+
+    public void setNpcName(String npcName) {
+        this.npcName = npcName;
+    }
+
+    public void setAlreadyCompletedStageId(String alreadyCompletedStageId) {
+        this.alreadyCompletedStageId = alreadyCompletedStageId;
+    }
+
+    public void setCooldown(long cooldown) {
+        this.cooldown = cooldown;
+    }
+
+    public void setOnlyOnce(boolean onlyOnce) {
+        this.onlyOnce = onlyOnce;
     }
 
     @Override

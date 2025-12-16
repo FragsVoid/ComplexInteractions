@@ -54,13 +54,13 @@ public class RequirementFactory {
             ItemStack loadedItem =  provider.getItem(itemId);
 
             if (loadedItem != null) {
-                matcher = new NormalMatcher(loadedItem);
+                matcher = new NormalMatcher(loadedItem, itemId, amount);
             }
         } else if (definition.startsWith("material")) {
             //material:(material) 1
             String matName = definition.split(":", 2)[1];
             Material mat = Material.valueOf(matName);
-            matcher = new MaterialMatcher(mat);
+            matcher = new MaterialMatcher(mat, amount);
         } else if (definition.startsWith("pdc")) {
             //pdc:namespace:key=value
             try {

@@ -32,8 +32,20 @@ public class Option {
         return text;
     }
 
+    public void setText(String text) {
+        this.text = text;
+    }
+
     public String getNextStage() {
         return nextStage;
+    }
+
+    public void setNextStageId(String nextStage) {
+        this.nextStage = nextStage;
+    }
+
+    public void setNoRequirementId(String noRequirementId) {
+        this.noRequirementId = noRequirementId;
     }
 
     public List<Action> getOnClickActions() {
@@ -42,6 +54,10 @@ public class Option {
 
     public String getNoRequirementId() {
         return noRequirementId;
+    }
+
+    public List<Requirement> getRequirements() {
+        return requirements;
     }
 
     public boolean hasRequirements(Player player) {

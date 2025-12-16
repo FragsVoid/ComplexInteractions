@@ -20,6 +20,11 @@ public class ConditionRequirement extends Requirement {
         return evaluateExpression(parsed);
     }
 
+    @Override
+    public String toString() {
+        return "condition:" + condition;
+    }
+
     private boolean evaluateExpression(String expression) {
         expression = expression.trim();
 

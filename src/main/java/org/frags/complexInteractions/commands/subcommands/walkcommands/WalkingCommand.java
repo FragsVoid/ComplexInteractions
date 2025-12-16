@@ -10,6 +10,7 @@ import org.frags.complexInteractions.objects.walking.WalkingObject;
 import org.frags.complexInteractions.objects.walking.Waypoints;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class WalkingCommand extends SubCommand {
@@ -40,23 +41,25 @@ public class WalkingCommand extends SubCommand {
             return;
         }
 
-        if (args[1].equalsIgnoreCase("npc")) {
+        String arg = args[1];
+
+        if (arg.equalsIgnoreCase("npc")) {
             setNpc(plugin, player, args);
-        } else if (args[1].equalsIgnoreCase("speed")) {
+        } else if (arg.equalsIgnoreCase("speed")) {
             setSpeed(plugin, player, args);
-        } else if (args[1].equalsIgnoreCase("mode")) {
+        } else if (arg.equalsIgnoreCase("mode")) {
             setMode(plugin, player, args);
-        } else if (args[1].equalsIgnoreCase("start")) {
+        } else if (arg.equalsIgnoreCase("start")) {
             setStartWaypoint(plugin, player, args);
-        } else if (args[1].equalsIgnoreCase("stops")) {
+        } else if (arg.equalsIgnoreCase("stops")) {
             setStops(plugin, player, args);
-        } else if (args[1].equalsIgnoreCase("stopsBlocks")) {
+        } else if (arg.equalsIgnoreCase("stopsBlocks")) {
             setStopsBlocks(plugin, player, args);
-        } else if (args[1].equalsIgnoreCase("location")) {
+        } else if (arg.equalsIgnoreCase("location")) {
             setLocation(plugin, player, args);
-        } else if (args[1].equalsIgnoreCase("addlocation")) {
+        } else if (arg.equalsIgnoreCase("addlocation")) {
             setAddLocation(plugin, player, args);
-        } else if (args[1].equalsIgnoreCase("get")) {
+        } else if (arg.equalsIgnoreCase("get")) {
             if (args.length != 3) {
                 player.sendMessage("Wrong usage: " + getSyntax() + " get <file>");
                 return;
@@ -75,11 +78,42 @@ public class WalkingCommand extends SubCommand {
             for (Waypoints waypoint : waypoints) {
                 player.sendMessage(waypoint.getLocationId() + " " + waypoint.getPossibleNextLocations().toString());
             }
-        } else if (args[1].equalsIgnoreCase("setarea")) {
+        } else if (arg.equalsIgnoreCase("setarea")) {
             setArea(plugin, player, args);
-        } else if (args[1].equalsIgnoreCase("forbidden")) {
+        } else if (arg.equalsIgnoreCase("forbidden")) {
             setForbidden(plugin, player, args);
+        } else if (arg.equalsIgnoreCase("create")) {
+            createWalking(plugin, player, args);
         }
+    }
+
+    public void createWalking(ComplexInteractions plugin, Player player, String[] args) {
+        if (args.length < 6) {
+            player.sendMessage("Usage: /interactions walk create <file> <npcid> <speed> <walkingmode>");
+            return;
+        }
+
+        String file = args[2];
+
+        String npcId = args[3];
+        String speedStr = args[4];
+        float speed = 0;
+        try {
+            speed = Float.parseFloat(speedStr);
+        } catch (NumberFormatException e) {
+            player.sendMessage("Invalid speed: " + speedStr);
+            return;
+        }
+
+        WalkingMode walkingMode = WalkingMode.getMode(args[5].toUpperCase());
+        if (walkingMode == null) {
+            player.sendMessage("Invalid walking mode: " + walkingMode);
+            return;
+        }
+        plugin.getWalkingManager().addWalkingObject(file, new WalkingObject(npcId, speed, walkingMode, null,
+                null, new HashMap<>(), false, 0, null));
+
+        player.sendMessage("Successfully created walking object.");
     }
 
     public void setForbidden(ComplexInteractions plugin, Player player, String[] args) {

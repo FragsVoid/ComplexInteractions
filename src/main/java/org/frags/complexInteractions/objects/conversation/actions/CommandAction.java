@@ -29,4 +29,12 @@ public class CommandAction extends Action {
 
         return true;
     }
+
+    @Override
+    public String toString() {
+        if (asConsole) {
+            return "[console]" + command;
+        }
+        return "[player]" + command;
+    }
 }

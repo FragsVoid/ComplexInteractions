@@ -28,4 +28,9 @@ public class ItemRequirement extends Requirement {
 
         return count >= amount;
     }
+
+    @Override
+    public String toString() {
+        return "has_item:" + matcher.toString();
+    }
 }

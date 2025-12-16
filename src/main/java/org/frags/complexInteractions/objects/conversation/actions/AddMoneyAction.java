@@ -17,4 +17,9 @@ public class AddMoneyAction extends Action {
         ComplexInteractions.getEconomy().depositPlayer(player, price);
         return true;
     }
+
+    @Override
+    public String toString() {
+        return "[addmoney]" + price;
+    }
 }

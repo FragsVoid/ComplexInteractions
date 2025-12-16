@@ -8,11 +8,12 @@ import org.frags.complexInteractions.objects.conversation.interfaces.ItemMatcher
 public class MaterialMatcher implements ItemMatcher {
 
     private final Material material;
+    private final int amount;
 
-    public MaterialMatcher(Material material) {
+    public MaterialMatcher(Material material, int amount) {
         this.material = material;
+        this.amount = amount;
     }
-
 
     @Override
     public boolean matches(ItemStack item) {
@@ -33,5 +34,10 @@ public class MaterialMatcher implements ItemMatcher {
         if (!meta.getPersistentDataContainer().isEmpty()) return false;
 
         return true;
+    }
+
+    @Override
+    public String toString() {
+        return "material:" + material.name() + " " + amount;
     }
 }

@@ -21,4 +21,9 @@ public class SoundAction extends Action {
         player.playSound(player.getLocation(), sound, volume, pitch);
         return true;
     }
+    //[sound]SOUND_NAME,vol,pitch
+    @Override
+    public String toString() {
+        return "[sound]" + sound.name() + "," + volume + "," + pitch;
+    }
 }

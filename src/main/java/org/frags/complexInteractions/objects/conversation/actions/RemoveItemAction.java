@@ -10,9 +10,15 @@ public class RemoveItemAction extends Action {
     private final ItemStack item;
     private final int amount;
 
-    public RemoveItemAction(ItemStack item, int amount) {
+    private final String itemId;
+
+    //[removeitem]preset:cabeza2 100
+    //[removeitem]DIAMOND 10
+
+    public RemoveItemAction(ItemStack item, int amount, String itemId) {
         this.item = item;
         this.amount = amount;
+        this.itemId = itemId;
     }
 
     @Override
@@ -34,5 +40,17 @@ public class RemoveItemAction extends Action {
         }
 
         return true;
+    }
+
+    @Override
+    public String toString() {
+        String str = "[removeitem]";
+        if (itemId == null) {
+            str = String.join(str, item.getType().name() + " " + amount);
+        } else {
+            str = String.join(str, "preset:" + itemId + " " + amount);
+        }
+
+        return str;
     }
 }

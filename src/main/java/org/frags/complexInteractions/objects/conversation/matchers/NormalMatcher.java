@@ -7,9 +7,13 @@ import org.frags.complexInteractions.objects.conversation.interfaces.ItemMatcher
 public class NormalMatcher implements ItemMatcher {
 
     private final ItemStack itemStack;
+    private final String itemId;
+    private final int amount;
 
-    public NormalMatcher(ItemStack item) {
+    public NormalMatcher(ItemStack item, String itemId, int amount) {
         this.itemStack = item;
+        this.itemId = itemId;
+        this.amount = amount;
     }
 
     @Override
@@ -17,5 +21,10 @@ public class NormalMatcher implements ItemMatcher {
         if (item == null || item.getType() == Material.AIR) return false;
 
         return item.isSimilar(this.itemStack);
+    }
+
+    @Override
+    public String toString() {
+        return "preset:" + itemId + " " + amount;
     }
 }
