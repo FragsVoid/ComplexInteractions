@@ -1,0 +1,32 @@
+npc_id:
+block_movement:
+slow_effect: (useless)
+start_conversation_radius:
+end_conversation_radius:
+first_conversation:
+no_requirement_conversation:
+npc_name: (useless)
+cooldown:
+cooldown_conversation: (id for the convo)
+interrupt_actions:
+fail_message:
+requirements:
+only_once:
+already_completed_id:
+conversation: (section)
+    conversation1:
+        completes_conversation: no
+        actions: #Executes after dialogue and before options
+        - ""
+        dialogue:
+            text:
+            - ""
+            delay:
+        options:
+            text:
+            start_conversation: (conversation after clicking option)
+            actions:
+            - ""
+            fail_message: (useless?)
+            requirements:
+            no_requirement:

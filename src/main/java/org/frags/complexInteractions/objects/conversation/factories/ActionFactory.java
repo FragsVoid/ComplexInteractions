@@ -1,7 +1,9 @@
 package org.frags.complexInteractions.objects.conversation.factories;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.Sound;
+import org.bukkit.inventory.ItemStack;
 import org.frags.complexInteractions.ComplexInteractions;
 import org.frags.complexInteractions.objects.conversation.Action;
 import org.frags.complexInteractions.objects.conversation.actions.*;
@@ -57,6 +59,26 @@ public class ActionFactory {
         if (configLine.startsWith("message:")) {
             String message = configLine.replace("message:", "");
             return new MessageAction(ComplexInteractions.miniMessage.deserialize(message));
+        }
+
+        if (configLine.startsWith("[removeitem]")) {
+            //[removeitem]preset:cabeza2 100
+            //[removeitem]DIAMOND 10
+            String newName = configLine.replace("[removeitem]", "");
+            if (newName.startsWith("preset:")) {
+                String preset = newName.replace("preset:", "");
+                String[] parts = preset.split(" ");
+                return new RemoveItemAction(ComplexInteractions.getInstance().getItemManager().getItem(parts[0]), Integer.parseInt(parts[1]));
+            } else {
+                String[] parts = newName.split(" ");
+                Material material = Material.matchMaterial(parts[0].toUpperCase());
+                if (material == null) {
+                    Bukkit.getLogger().warning("[removeitem] is not a valid material");
+                    return null;
+                }
+
+                return new RemoveItemAction(new ItemStack(material), Integer.parseInt(parts[1]));
+            }
         }
 
         return null;

@@ -17,6 +17,7 @@ public class Conversation {
     private String noReqStageId;
     private String cooldownMessage;
     private String npcName;
+    private String alreadyCompletedStageId;
 
     private Map<String, ConversationStage> conversationStageMap;
     private List<Action> interruptActions;
@@ -25,10 +26,12 @@ public class Conversation {
 
     private long cooldown;
 
+    private boolean onlyOnce;
+
     public Conversation(String id, String npcId, boolean blockMovement, boolean slowEffect, long starConversationRadius,
                         long endConversationRadius, String startStageId, String noReqStageId, String npcName,
                         Map<String, ConversationStage> conversationStageMap, List<Action> interruptActions,
-                        List<Requirement> requirements, long cooldown, String cooldownMessage) {
+                        List<Requirement> requirements, long cooldown, String cooldownMessage, boolean onlyOnce, String alreadyCompletedStageId) {
         this.id = id;
         this.npcId = npcId;
         this.blockMovement = blockMovement;
@@ -43,6 +46,8 @@ public class Conversation {
         this.requirements = requirements;
         this.cooldown = cooldown;
         this.cooldownMessage = cooldownMessage;
+        this.onlyOnce = onlyOnce;
+        this.alreadyCompletedStageId = alreadyCompletedStageId;
     }
 
     public boolean canStart(Player player) {
@@ -60,6 +65,15 @@ public class Conversation {
     public String getCooldownMessage() {
         return cooldownMessage;
     }
+
+    public boolean isOnlyOnce() {
+        return onlyOnce;
+    }
+
+    public String getAlreadyCompletedStageId() {
+        return alreadyCompletedStageId;
+    }
+
 
     public String getId() {
         return id;
@@ -111,5 +125,14 @@ public class Conversation {
 
     public long getCooldown() {
         return cooldown;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof Conversation conversation) {
+            return conversation.getId().equals(this.id);
+        }
+
+        return false;
     }
 }

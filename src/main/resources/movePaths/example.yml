@@ -1,0 +1,9 @@
+npcId: "example"
+speed: 0.7
+mode: WAYPOINT #WAYPOINT or WANDER
+world_edit_region: null #By command
+start_waypoint: "first_waypoint" #This is the location where the npc will spawn when npc loads also can be set by command
+stops_if_player: true
+stops_player_blocks: 10
+waypoints:
+  first_waypoint: null #This works by commands, unless you know how to type a location which I doubt:)

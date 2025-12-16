@@ -11,5 +11,7 @@ public abstract class SubCommand {
 
     public abstract String getSyntax();
 
+    public abstract boolean hasPermission(Player player);
+
     public abstract void perform(ComplexInteractions plugin, Player player, String[] args);
 }

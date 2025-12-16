@@ -1,0 +1,22 @@
+items:
+  # ID que usarás en las conversaciones (preset:espada_real)
+  espada_real:
+    material: DIAMOND_SWORD
+    name: "<gradient:yellow:gold>Espada del Rey</gradient>"
+    lore:
+      - "<gray>Una espada entregada por"
+      - "<gray>el mismísimo rey Arturo."
+    custom_model_data: 1001
+    flags:
+      - HIDE_ATTRIBUTES
+    # Esto permite que tu PDCMatcher también funcione con este ítem
+    pdc:
+      "rpg:rarity": "legendary"
+      "complexinteractions:quest_item": "true"
+
+  carta_bandido:
+    material: PAPER
+    name: "<red>Carta de Amenaza"
+    lore:
+      - "<gray>Dice: 'No te metas en esto'"
+    custom_model_data: 5

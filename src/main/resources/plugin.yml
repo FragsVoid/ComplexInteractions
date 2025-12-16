@@ -6,9 +6,12 @@ depend:
   - Vault
   - PlaceholderAPI
 softdepend:
+  - FancyNpcs
   - Oraxen
   - MMOItems
   - ItemsAdder
 commands:
   interactions:
     description: "Main command of the plugin"
+  gethead:
+    description: "gets head"

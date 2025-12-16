@@ -19,11 +19,13 @@ import java.util.Map;
 public class ConversationManager {
 
     private ComplexInteractions plugin;
+    private ItemProvider itemProvider;
 
     private Map<String, Conversation> conversations;
 
-    public ConversationManager(ComplexInteractions plugin) {
+    public ConversationManager(ComplexInteractions plugin, ItemProvider itemProvider) {
         this.plugin = plugin;
+        this.itemProvider = itemProvider;
 
         conversations = new HashMap<>();
         loadConversations();
@@ -35,6 +37,18 @@ public class ConversationManager {
 
     public List<Conversation> getAllConversations() {
         return new ArrayList<>(conversations.values());
+    }
+
+    public void reload() {
+        loadConversations();
+    }
+
+    public List<String> getAllNpcsId() {
+        List<String> ids = new ArrayList<>();
+        for (Conversation c : conversations.values()) {
+            ids.add(c.getNpcId());
+        }
+        return ids;
     }
 
     private void loadConversations() {
@@ -52,8 +66,6 @@ public class ConversationManager {
         String[] files = folder.list();
         if (files == null)
             return;
-
-        ItemProvider itemProvider = null;
 
         for (String fileName : files) {
             String conversationId = fileName.replace(".yml", "");
@@ -81,6 +93,8 @@ public class ConversationManager {
                 ConfigurationSection section = convSection.getConfigurationSection(stageKey);
                 ConfigurationSection dialogueSection =  section.getConfigurationSection("dialogue");
                 ConfigurationSection optionsSection =  section.getConfigurationSection("options");
+
+                String completesConversation = section.getString("completes_conversation");
 
                 List<String> text = dialogueSection.getStringList("text");
                 long delay = dialogueSection.getLong("delay");
@@ -111,11 +125,20 @@ public class ConversationManager {
                                 parsedRequirements.add(req);
                         }
 
-                        optionList.add(new Option(optionKey, optionText, startConversation, parsedActions, parsedRequirements));
+                        String noRequirementId = optionSection.getString("no_requirement");
+
+                        optionList.add(new Option(optionKey, optionText, startConversation, parsedActions, parsedRequirements, noRequirementId));
                     }
                 }
+                List<String> rawActions = section.getStringList("actions");
+                List<Action> actions = new ArrayList<>();
+                for (String actionKey : rawActions) {
+                    Action action = ActionFactory.parse(actionKey);
+                    if (action != null)
+                        actions.add(action);
+                }
 
-                conversationStages.put(stageKey, new ConversationStage(conversationId, stageKey, text, delay, optionList));
+                conversationStages.put(stageKey, new ConversationStage(conversationId, stageKey, text, delay, actions, optionList, completesConversation));
             }
 
             List<Action> interruptActions = new ArrayList<>();
@@ -134,10 +157,14 @@ public class ConversationManager {
                     globalRequirements.add(req);
             }
 
+            boolean onlyOnce = config.getBoolean("only_once");
+            String alreadyCompletedStageId = config.getString("already_completed_id");
+
 
             Conversation conversation = new Conversation(
                     conversationId, npcId, blockMovement, slowEffect, startRadius, endRadius, startStageId, noReqStageId,
-                    npcName, conversationStages, interruptActions, globalRequirements, cooldown, cooldownStageId
+                    npcName, conversationStages, interruptActions, globalRequirements, cooldown, cooldownStageId, onlyOnce,
+                    alreadyCompletedStageId
             );
             conversations.put(npcId, conversation);
         }

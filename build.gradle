@@ -27,6 +27,7 @@ repositories {
         url = "https://repo.fancyinnovations.com/releases"
     }
 
+    maven { url "https://maven.enginehub.org/repo/" }
 }
 
 

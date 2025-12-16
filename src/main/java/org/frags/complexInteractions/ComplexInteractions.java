@@ -2,16 +2,16 @@ package org.frags.complexInteractions;
 
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.milkbowl.vault.economy.Economy;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.frags.complexInteractions.commands.HeadCommand;
 import org.frags.complexInteractions.commands.InteractionsCommand;
 import org.frags.complexInteractions.files.TemplateFile;
-import org.frags.complexInteractions.listener.NpcInteractionListener;
-import org.frags.complexInteractions.listener.QuitListener;
-import org.frags.complexInteractions.managers.ConversationManager;
-import org.frags.complexInteractions.managers.ConversationScanner;
-import org.frags.complexInteractions.managers.CooldownManager;
-import org.frags.complexInteractions.managers.SessionManager;
+import org.frags.complexInteractions.listener.*;
+import org.frags.complexInteractions.managers.*;
 
 import java.util.*;
 
@@ -19,6 +19,9 @@ public final class ComplexInteractions extends JavaPlugin {
 
     private ConversationManager conversationManager;
     private SessionManager sessionManager;
+    private ItemManager itemManager;
+
+    private WalkingManager walkingManager;
 
     private static ComplexInteractions INSTANCE;
 
@@ -40,20 +43,47 @@ public final class ComplexInteractions extends JavaPlugin {
     public void onEnable() {
         INSTANCE = this;
 
-        if (!setupEconomy() ) {
+        saveResource("everyoption.txt", true);
+
+        loadConfig();
+
+        this.itemManager = new ItemManager(this);
+
+        this.conversationManager = new ConversationManager(this, itemManager);
+        this.sessionManager = new SessionManager(conversationManager, this);
+        this.walkingManager = new WalkingManager(this);
+
+        if (conversationScanner != null) {
+            conversationScanner.cancel();
+            conversationScanner = null;
+        }
+
+        this.conversationScanner = new ConversationScanner(sessionManager, conversationManager);
+        conversationScanner.runTaskTimer(this, 20L, 10L);
+
+        if (!setupEconomy()) {
             getLogger().severe(String.format("[%s] - Disabled due to no Vault dependency found!", getDescription().getName()));
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
 
-        loadConfig();
-        loadManagers();
-
         getCommand("interactions").setExecutor(new InteractionsCommand(this));
+        getCommand("interactions").setTabCompleter(new InteractionsCommand(this));
+        getCommand("gethead").setExecutor(new HeadCommand(this));
         getServer().getPluginManager().registerEvents(new NpcInteractionListener(conversationManager, sessionManager), this);
         getServer().getPluginManager().registerEvents(new QuitListener(this), this);
+        getServer().getPluginManager().registerEvents(new NpcSpawnListener(walkingManager), this);
+        getServer().getPluginManager().registerEvents(new WorldGuardSpawnListener(), this);
+        getServer().getPluginManager().registerEvents(new NpcDespawnListener(walkingManager), this);
+        getServer().getPluginManager().registerEvents(new ServerLoadListener(walkingManager), this);
+        getServer().getPluginManager().registerEvents(new NpcGuideListener(), this);
 
-        getServer().getScheduler().runTaskTimerAsynchronously(this, cooldownManager::saveCooldowns, 12000L, 12000L);
+        getServer().getScheduler().runTaskTimerAsynchronously(this, () -> {
+            cooldownManager.saveCooldowns();
+            sessionManager.saveAllConversations();
+            walkingManager.save();
+        }, 12000L, 12000L);
+
     }
 
     @Override
@@ -61,6 +91,15 @@ public final class ComplexInteractions extends JavaPlugin {
         // Plugin shutdown logic
         if (cooldownManager != null) {
             cooldownManager.saveCooldowns();
+        }
+
+        if (sessionManager != null) {
+            sessionManager.saveAllConversations();
+        }
+
+        if (walkingManager != null) {
+            walkingManager.getNpcAIMover().cancelAll();
+            walkingManager.save();
         }
     }
 
@@ -79,12 +118,22 @@ public final class ComplexInteractions extends JavaPlugin {
         messagesFile.reloadConfig();
         itemsFile.reloadConfig();
         loadMessages();
+
         loadManagers();
     }
 
     private void loadManagers() {
-        this.conversationManager = new ConversationManager(this);
-        this.sessionManager = new SessionManager(conversationManager, this);
+        if (conversationManager != null) {
+            conversationManager.reload();
+        }
+
+        if (walkingManager != null) {
+            walkingManager.load(true);
+        }
+
+        if (itemManager != null) {
+            itemManager.loadItems();
+        }
 
         if (conversationScanner != null) {
             conversationScanner.cancel();
@@ -119,8 +168,20 @@ public final class ComplexInteractions extends JavaPlugin {
         }
     }
 
+    public WalkingManager getWalkingManager() {
+        return walkingManager;
+    }
+
+    public TemplateFile getItemsFile() {
+        return itemsFile;
+    }
+
     public CooldownManager getCooldownManager() {
         return cooldownManager;
+    }
+
+    public ItemManager getItemManager() {
+        return itemManager;
     }
 
     public static ComplexInteractions getInstance() {

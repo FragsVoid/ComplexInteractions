@@ -1,14 +1,15 @@
 package org.frags.complexInteractions.managers;
 
+import org.bukkit.Bukkit;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.frags.complexInteractions.ComplexInteractions;
 import org.frags.complexInteractions.objects.Session;
 import org.frags.complexInteractions.objects.conversation.Conversation;
 import org.frags.complexInteractions.objects.conversation.ConversationStage;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class SessionManager {
@@ -18,11 +19,67 @@ public class SessionManager {
     private final Map<UUID, Session> activeSessions = new HashMap<>();
     private final ComplexInteractions plugin;
 
+    private final Map<UUID, Set<String>> completedConversations = new HashMap<>();
+
     public SessionManager(ConversationManager conversationManager, ComplexInteractions plugin) {
         this.conversationManager = conversationManager;
         this.plugin = plugin;
     }
 
+    public void loadCompletedConversations(UUID uuid) {
+        completedConversations.remove(uuid);
+
+        List<String> conversationsId = plugin.getDataFile().getConfig().getStringList("completed." + uuid.toString());
+        if (conversationsId.isEmpty()) return;
+
+        Set<String> conversations = new HashSet<>(conversationsId);
+
+        completedConversations.put(uuid, conversations);
+    }
+
+    public void saveAllConversations() {
+        for (Map.Entry<UUID, Set<String>> entry : completedConversations.entrySet()) {
+            Set<String> conversations = entry.getValue();
+            if (conversations == null || conversations.isEmpty()) {
+                plugin.getDataFile().getConfig().set("completed." + entry.getKey().toString(), null);
+                continue;
+            }
+
+
+            plugin.getDataFile().getConfig().set("completed." + entry.getKey().toString(), new ArrayList<>(conversations));
+        }
+        plugin.getDataFile().saveConfig();
+    }
+
+    public void removeConversation(UUID uuid, String conversationId) {
+        Conversation conversation = plugin.getConversationManager().getConversation(conversationId);
+        String id;
+        if (conversation == null) {
+            id = conversationId;
+        } else {
+            id = conversation.getId();
+        }
+
+        completedConversations.computeIfAbsent(uuid, k -> new HashSet<>()).remove(id);
+    }
+
+    public boolean hasCompleted(UUID uuid, Conversation conversation) {
+        return hasCompleted(uuid, conversation.getId());
+    }
+
+    public boolean hasCompleted(UUID uuid, String conversation) {
+        Set<String> conversations = completedConversations.get(uuid);
+        if (conversations == null || conversations.isEmpty()) return false;
+        return conversations.contains(conversation);
+    }
+
+    public void completedConversation(UUID uuid, Conversation conversation) {
+        completedConversation(uuid, conversation.getId());
+    }
+
+    public void completedConversation(UUID uuid, String conversation) {
+        completedConversations.computeIfAbsent(uuid, k -> new HashSet<>()).add(conversation);
+    }
 
     public void startSession(Player player, String conversationId) {
 
@@ -33,7 +90,23 @@ public class SessionManager {
             return;
         }
 
-        Session session = new Session(player, conversation, this);
+        Session session = new Session(plugin, player, conversation, this);
+
+        if (conversation.isOnlyOnce() && hasCompleted(player.getUniqueId(), conversation.getId())) {
+            ConversationStage alreadyCompletedStage = conversation.getConversationStageMap().get(conversation.getAlreadyCompletedStageId());
+            if (alreadyCompletedStage == null) return;
+
+            session.startStage(alreadyCompletedStage);
+            return;
+        }
+
+        if (plugin.getCooldownManager().isOnCooldown(player.getUniqueId(), conversationId)) {
+            ConversationStage cooldownStage = conversation.getConversationStageMap().get(conversation.getCooldownMessage());
+            if (cooldownStage == null) return;
+
+            session.startStage(cooldownStage);
+            return;
+        }
 
         if (!conversation.canStart(player)) {
             ConversationStage noReqConversation = conversation.getConversationStageMap().get(conversation.getNoReqStageId());
@@ -43,17 +116,13 @@ public class SessionManager {
             return;
         }
 
-        if (plugin.getCooldownManager().isOnCooldown(player.getUniqueId(), conversationId)) {
-            long left = plugin.getCooldownManager().getRemainingSeconds(player.getUniqueId(), conversationId);
-            player.sendMessage(ComplexInteractions.miniMessage.deserialize(conversation.getCooldownMessage().replace("%time%", getRemainingTimeFormatted(left))));
-            return;
-        }
+
 
         activeSessions.put(player.getUniqueId(), session);
         session.start();
     }
 
-    private String getRemainingTimeFormatted(long cooldownSeconds) {
+    public String getRemainingTimeFormatted(long cooldownSeconds) {
         long hours = cooldownSeconds / 3600;
         long minutes =  (cooldownSeconds % 3600) / 60;
         long seconds =  cooldownSeconds % 60;
@@ -66,6 +135,15 @@ public class SessionManager {
         if (session != null) {
             session.cleanup();
             if (completed) {
+                ConversationStage stage = session.getStage();
+                String completes = stage.getCompletesConversation();
+                if (completes != null && completes.equals("no")) {
+                    return;
+                }
+                if (session.getConversation().isOnlyOnce()) {
+                    completedConversation(player.getUniqueId(), session.getConversation().getId());
+                    return;
+                }
                 long cooldownTime = session.getConversation().getCooldown();
                 if (cooldownTime > 0) {
                     plugin.getCooldownManager().setCooldown(player.getUniqueId(), session.getConversation().getNpcId(), cooldownTime);

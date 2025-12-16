@@ -16,6 +16,7 @@ public class ConditionRequirement extends Requirement {
     @Override
     public boolean check(Player player) {
         String parsed = PlaceholderAPI.setPlaceholders(player, condition);
+        System.out.println(parsed);
         return evaluateExpression(parsed);
     }
 

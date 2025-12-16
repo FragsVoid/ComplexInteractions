@@ -13,12 +13,15 @@ public class Option {
     private List<Action> onClickActions;
     private List<Requirement> requirements;
 
-    public Option(String id, String text, String nextStage, List<Action> onClickActions, List<Requirement> requirements) {
+    private String noRequirementId;
+
+    public Option(String id, String text, String nextStage, List<Action> onClickActions, List<Requirement> requirements, String noRequirementId) {
         this.id = id;
         this.text = text;
         this.nextStage = nextStage;
         this.onClickActions = onClickActions;
         this.requirements = requirements;
+        this.noRequirementId = noRequirementId;
     }
 
     public String getId() {
@@ -35,6 +38,10 @@ public class Option {
 
     public List<Action> getOnClickActions() {
         return onClickActions;
+    }
+
+    public String getNoRequirementId() {
+        return noRequirementId;
     }
 
     public boolean hasRequirements(Player player) {

@@ -24,6 +24,11 @@ public class ResetCooldownCommand extends SubCommand {
     }
 
     @Override
+    public boolean hasPermission(Player player) {
+        return player.hasPermission("interactions.reset") && player.hasPermission("interactions.admin");
+    }
+
+    @Override
     public void perform(ComplexInteractions plugin, Player player, String[] args) {
         if (!player.hasPermission("interactions.reset") && !player.hasPermission("interactions.admin")) {
             player.sendMessage(ComplexInteractions.miniMessage.deserialize(plugin.getMessage("no_permission")));
@@ -43,6 +48,7 @@ public class ResetCooldownCommand extends SubCommand {
         }
 
         plugin.getCooldownManager().resetCooldown(target.getUniqueId(), args[2]);
+        plugin.getSessionManager().removeConversation(target.getUniqueId(), args[2]);
         player.sendMessage(ComplexInteractions.miniMessage.deserialize("<green>Reseted"));
     }
 }

@@ -5,7 +5,7 @@ start_conversation_radius: 0
 end_conversation_radius: 5
 first_conversation: 'conversation1'
 no_requirement_conversation: 'fail'
-cooldown_conversation: '<red>Wait <white>%time% <red>before talking to me!'
+cooldown_conversation: 'cooldown_conversation'
 npc_name: "<blue>Zeus<gray>:"
 cooldown: 3600
 interrupt_actions:

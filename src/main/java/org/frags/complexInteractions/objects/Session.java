@@ -1,6 +1,7 @@
 package org.frags.complexInteractions.objects;
 
 
+import me.clip.placeholderapi.PlaceholderAPI;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickCallback;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -15,10 +16,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.frags.complexInteractions.ComplexInteractions;
 import org.frags.complexInteractions.managers.SessionManager;
-import org.frags.complexInteractions.objects.conversation.Conversation;
-import org.frags.complexInteractions.objects.conversation.ConversationStage;
-import org.frags.complexInteractions.objects.conversation.Option;
-import org.frags.complexInteractions.objects.conversation.Requirement;
+import org.frags.complexInteractions.objects.conversation.*;
 
 import java.time.Duration;
 import java.util.List;
@@ -37,10 +35,13 @@ public class Session {
     private Player player;
     private boolean ended = false;
 
-    public Session(Player player, Conversation conversation, SessionManager sessionManager) {
+    private ComplexInteractions plugin;
+
+    public Session(ComplexInteractions plugin, Player player, Conversation conversation, SessionManager sessionManager) {
         this.conversation = conversation;
         this.player = player;
         this.sessionManager = sessionManager;
+        this.plugin = plugin;
     }
 
     public void start() {
@@ -75,8 +76,12 @@ public class Session {
                 return;
             }
             final String message = messages.get(i);
+            long left = plugin.getCooldownManager().getRemainingSeconds(player.getUniqueId(), conversation.getId());
             Bukkit.getScheduler().runTaskLater(ComplexInteractions.getInstance(), () -> {
-                player.sendMessage(MiniMessage.miniMessage().deserialize(message));
+                String parsedMessage = PlaceholderAPI.setPlaceholders(player, message)
+                        .replace("%player%", player.getName())
+                        .replace("%time%", sessionManager.getRemainingTimeFormatted(left));
+                player.sendMessage(MiniMessage.miniMessage().deserialize(parsedMessage));
             }, stage.getDelay() * i * 20);
         }
 
@@ -89,9 +94,18 @@ public class Session {
                 sessionManager.endSession(player, false);
                 return;
             }
+            manageActions(stage);
             manageOptions(stage);
-        }, stage.getDelay() * messages.size() * 20 + stage.getDelay() * 20);
+        }, stage.getDelay() * messages.size() * 20);
 
+    }
+
+    private void manageActions(ConversationStage stage) {
+        List<Action> actions = stage.getActions();
+
+        for (Action action : actions) {
+            action.execute(player);
+        }
     }
 
     private void manageOptions(ConversationStage stage) {
@@ -106,15 +120,26 @@ public class Session {
             }
             Option option = options.get(i);
             Bukkit.getScheduler().runTaskLater(ComplexInteractions.getInstance(), () -> {
-                if (!option.hasRequirements(player)) return;
                 if (!sessionManager.isConversing(player)) return;
 
-                Component optionText = MiniMessage.miniMessage().deserialize(option.getText());
+                String parsedMessage = PlaceholderAPI.setPlaceholders(player, option.getText());
+
+                Component optionText = MiniMessage.miniMessage().deserialize(parsedMessage);
 
                 Component finalMessage = optionText.clickEvent(ClickEvent.callback((audience) -> {
                     if (alreadyClicked.get()) return;
                     alreadyClicked.set(true);
                     if (audience instanceof Player p) {
+                        if (!option.hasRequirements(p)) {
+                            ConversationStage nextStage = conversation.getStage(option.getNoRequirementId());
+                            if (nextStage != null) {
+                                this.startStage(nextStage);
+                            } else {
+                                sessionManager.endSession(player, false);
+                            }
+                            return;
+                        }
+
                         option.getOnClickActions().forEach(a -> {a.execute(p);});
 
                         String nextId = option.getNextStage();

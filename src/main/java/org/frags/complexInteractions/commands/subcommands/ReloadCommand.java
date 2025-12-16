@@ -21,13 +21,18 @@ public class ReloadCommand extends SubCommand {
     }
 
     @Override
+    public boolean hasPermission(Player player) {
+        return player.hasPermission("interactions.reload") && player.hasPermission("interactions.admin");
+    }
+
+    @Override
     public void perform(ComplexInteractions plugin, Player player, String[] args) {
         if (!player.hasPermission("interactions.reload") && !player.hasPermission("interactions.admin")) {
             player.sendMessage(ComplexInteractions.miniMessage.deserialize(plugin.getMessage("no_permission")));
             return;
         }
 
-        plugin.reloadConfig();
+        plugin.reload();
         player.sendMessage(ComplexInteractions.miniMessage.deserialize("Configuration reloaded"));
     }
 }
