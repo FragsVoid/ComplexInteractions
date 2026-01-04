@@ -1,7 +1,5 @@
 package org.frags.complexInteractions.npcmovermanager;
 
-import de.oliver.fancynpcs.api.FancyNpcsPlugin;
-import de.oliver.fancynpcs.api.Npc;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.*;
@@ -9,6 +7,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.frags.complexInteractions.ComplexInteractions;
 import org.frags.complexInteractions.npcmovermanager.goals.AvoidForbiddenGoal;
+import org.frags.complexInteractions.objects.conversation.interfaces.NpcAdapter;
 import org.frags.complexInteractions.objects.walking.WalkingMode;
 import org.frags.complexInteractions.objects.walking.WalkingObject;
 import org.frags.complexInteractions.objects.walking.Waypoints;
@@ -23,8 +22,11 @@ public class NpcAIMover {
 
     private final Random rand = new Random();
 
-    public NpcAIMover(ComplexInteractions plugin) {
+    private NpcAdapter npcAdapter;
+
+    public NpcAIMover(ComplexInteractions plugin, NpcAdapter npcAdapter) {
         this.plugin = plugin;
+        this.npcAdapter = npcAdapter;
     }
 
     public void startWalkingTask(String npcId) {
@@ -41,10 +43,9 @@ public class NpcAIMover {
             }
         }
 
-        Npc npc = FancyNpcsPlugin.get().getNpcManager().getNpc(npcId);
-        if (npc == null || activeTasks.containsKey(npcId)) return;
+        if (!npcAdapter.isValid(plugin, npcId) || activeTasks.containsKey(npcId)) return;
 
-        Location start = npc.getData().getLocation().clone().add(0, 0.5, 0);
+        Location start = npcAdapter.getLocation(plugin, npcId);
 
         removeOldGuides(start, npcId);
 
@@ -80,7 +81,7 @@ public class NpcAIMover {
                 }
 
                 if (guide.isOnGround()) {
-                    startMoving(npc, walkingObject, guide);
+                    startMoving(npcId, walkingObject, guide);
                     cancel();
                 }
             }
@@ -101,11 +102,12 @@ public class NpcAIMover {
         }
     }
 
-    private void startMoving(Npc npc, WalkingObject walkingObject, Chicken guide) {
-        if (activeTasks.containsKey(npc.getData().getName())) return;
+    private void startMoving(String npcId, WalkingObject walkingObject, Chicken guide) {
+        if (activeTasks.containsKey(npcId)) return;
 
+        Location currentLocation = npcAdapter.getLocation(plugin, npcId);
         Location centerLocation = walkingObject.getWaypoint(walkingObject.getStartWaypoint()).getLocation();
-        if (centerLocation == null) centerLocation = npc.getData().getLocation();
+        if (centerLocation == null) centerLocation = currentLocation;
 
         boolean isWandering = walkingObject.getWalkingMode() == WalkingMode.WANDER;
 
@@ -125,14 +127,14 @@ public class NpcAIMover {
             @Override
             public void run() {
                 if (this.isCancelled()) {
-                    activeTasks.remove(npc.getData().getId());
+                    activeTasks.remove(npcId);
                     if (guide.isValid())
                         guide.remove();
                     this.cancel();
                     return;
                 }
                 if (!guide.isValid() || guide.isDead()) {
-                    activeTasks.remove(npc.getData().getId());
+                    activeTasks.remove(npcId);
                     this.cancel();
                     return;
                 }
@@ -153,7 +155,7 @@ public class NpcAIMover {
                                 isPaused = true;
                             }
 
-                            guide.teleportAsync(npc.getData().getLocation());
+                            guide.teleportAsync(npcAdapter.getLocation(plugin, npcId));
                             return;
                         } else {
                             if (isPaused) {
@@ -175,12 +177,7 @@ public class NpcAIMover {
                             currentLoc.distanceSquared(lastLocation) > 0.001;
 
                     if (hasMoved) {
-                        npc.getData().setLocation(currentLoc);
-                        double viewRange = npc.getData().getVisibilityDistance();
-
-                        for (Player p : currentLoc.getWorld().getNearbyPlayers(currentLoc, viewRange)) {
-                            npc.move(p, false);
-                        }
+                        npcAdapter.updateNpcLocation(plugin, npcId, currentLoc);
                         lastLocation = currentLoc;
                     }
                 }
@@ -200,8 +197,6 @@ public class NpcAIMover {
 
                     return;
                 }
-
-
 
                 if (currentLoc.distanceSquared(walkingObject.getNextWaypoint().getLocation()) < 1.5) {
                     walkingObject.setCurrentWaypoint(walkingObject.getNextWaypoint().getLocationId());
@@ -225,7 +220,7 @@ public class NpcAIMover {
                     if (!retry) {
                         guide.getPathfinder().stopPathfinding();
                         guide.remove();
-                        npc.getData().setLocation(walkingObject.getWaypoint(walkingObject.getStartWaypoint()).getLocation());
+                        npcAdapter.updateNpcLocation(plugin, npcId, walkingObject.getWaypoint(walkingObject.getStartWaypoint()).getLocation());
                         walkingObject.setNextWaypoint(null);
                         walkingObject.setCurrentWaypoint(walkingObject.getStartWaypoint());
                         this.cancel();
@@ -235,7 +230,7 @@ public class NpcAIMover {
             }
         }.runTaskTimer(plugin, 0L, 1L);
 
-        activeTasks.put(npc.getData().getName(), new ActiveNpcContext(guide, task));
+        activeTasks.put(npcId, new ActiveNpcContext(guide, task));
     }
 
     private Waypoints calculateNextWaypoint(WalkingObject walkingObject) {

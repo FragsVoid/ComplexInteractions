@@ -10,6 +10,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.util.BoundingBox;
 import org.frags.complexInteractions.ComplexInteractions;
 import org.frags.complexInteractions.npcmovermanager.NpcAIMover;
+import org.frags.complexInteractions.objects.conversation.interfaces.NpcAdapter;
 import org.frags.complexInteractions.objects.walking.WalkingMode;
 import org.frags.complexInteractions.objects.walking.WalkingObject;
 import org.frags.complexInteractions.objects.walking.WanderingArea;
@@ -28,8 +29,11 @@ public class WalkingManager {
 
     public WalkingManager(ComplexInteractions plugin) {
         this.plugin = plugin;
-        this.npcAIMover = new NpcAIMover(plugin);
         load(false);
+    }
+
+    public void setNpcAIMover(NpcAIMover npcAIMover) {
+        this.npcAIMover = npcAIMover;
     }
 
     public boolean exists(String file) {

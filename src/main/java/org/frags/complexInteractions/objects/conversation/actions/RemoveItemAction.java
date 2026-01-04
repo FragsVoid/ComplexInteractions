@@ -44,13 +44,8 @@ public class RemoveItemAction extends Action {
 
     @Override
     public String toString() {
-        String str = "[removeitem]";
-        if (itemId == null) {
-            str = String.join(str, item.getType().name() + " " + amount);
-        } else {
-            str = String.join(str, "preset:" + itemId + " " + amount);
-        }
+        String str = (itemId == null) ? item.getType().name() : "preset:" + itemId;
 
-        return str;
+        return "[removeitem]" + str + " " + amount;
     }
 }

@@ -1,5 +1,7 @@
 package org.frags.complexInteractions.objects.conversation;
 
+import net.kyori.adventure.text.Component;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
@@ -20,6 +22,11 @@ public class Conversation {
     private String cooldownMessage;
     private String npcName;
     private String alreadyCompletedStageId;
+    private boolean mission;
+    private MissionCategory missionCategory;
+
+    private Component missionName;
+    private List<Component> missionLore;
 
     private Map<String, ConversationStage> conversationStageMap;
     private List<Action> interruptActions;
@@ -30,10 +37,14 @@ public class Conversation {
 
     private boolean onlyOnce;
 
+    private Material icon;
+
     public Conversation(String id, String npcId, boolean blockMovement, boolean slowEffect, long starConversationRadius,
                         long endConversationRadius, String startStageId, String noReqStageId, String npcName,
                         Map<String, ConversationStage> conversationStageMap, List<Action> interruptActions,
-                        List<Requirement> requirements, long cooldown, String cooldownMessage, boolean onlyOnce, String alreadyCompletedStageId) {
+                        List<Requirement> requirements, long cooldown, String cooldownMessage, boolean onlyOnce, String alreadyCompletedStageId,
+                        boolean isMission, MissionCategory missionCategory,  Component missionName, List<Component> missionLore,
+                        Material icon) {
         this.id = id;
         this.npcId = npcId;
         this.blockMovement = blockMovement;
@@ -50,6 +61,11 @@ public class Conversation {
         this.cooldownMessage = cooldownMessage;
         this.onlyOnce = onlyOnce;
         this.alreadyCompletedStageId = alreadyCompletedStageId;
+        this.mission = isMission;
+        this.missionCategory = missionCategory;
+        this.missionName = missionName;
+        this.missionLore = missionLore;
+        this.icon = icon;
     }
 
     public boolean canStart(Player player) {
@@ -58,6 +74,26 @@ public class Conversation {
         }
 
         return true;
+    }
+
+    public Material getIcon() {
+        return icon;
+    }
+
+    public boolean isMission() {
+        return mission;
+    }
+
+    public MissionCategory getMissionCategory() {
+        return missionCategory;
+    }
+
+    public Component getMissionName() {
+        return missionName;
+    }
+
+    public List<Component> getMissionLore() {
+        return missionLore;
     }
 
     public ConversationStage getStage(String stageId) {

@@ -32,7 +32,5 @@ public class NpcSpawnListener implements Listener {
         Bukkit.getScheduler().runTask(ComplexInteractions.getInstance(), () -> {
             walkingManager.getNpcAIMover().startWalkingTask(npcId);
         });
-
-
     }
 }

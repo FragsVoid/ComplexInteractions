@@ -19,6 +19,7 @@ import org.frags.complexInteractions.objects.walking.Waypoints;
 import de.oliver.fancynpcs.api.FancyNpcsPlugin;
 import de.oliver.fancynpcs.api.Npc;
 
+import org.frags.customItems.CustomItems;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -36,8 +37,6 @@ public class InteractionsCommand implements CommandExecutor, TabCompleter {
         this.plugin = plugin;
         subCommands.add(new ReloadCommand());
         subCommands.add(new ResetCooldownCommand());
-        subCommands.add(new ImportCommand());
-        subCommands.add(new GetItemCommand());
         subCommands.add(new WalkingCommand());
         subCommands.add(new ConversationCommand());
     }
@@ -90,7 +89,7 @@ public class InteractionsCommand implements CommandExecutor, TabCompleter {
 
             else if (mainArg.equals("get") && player.hasPermission("interactions.get") && player.hasPermission("interactions.admin")) {
                 if (args.length == 2) {
-                    return StringUtil.copyPartialMatches(args[1], new ArrayList<>(plugin.getItemManager().getAllIds()), new ArrayList<>());
+                    return StringUtil.copyPartialMatches(args[1], new ArrayList<>(CustomItems.INSTANCE.getItemProvider().getAllIds()), new ArrayList<>());
                 }
             }
 

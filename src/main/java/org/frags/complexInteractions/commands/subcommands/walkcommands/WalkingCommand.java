@@ -12,6 +12,7 @@ import org.frags.complexInteractions.objects.walking.Waypoints;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class WalkingCommand extends SubCommand {
     @Override
@@ -68,6 +69,7 @@ public class WalkingCommand extends SubCommand {
             String file = args[2];
             if (!plugin.getWalkingManager().exists(file)) {
                 player.sendMessage("File not found: " + file);
+                return;
             }
             WalkingObject walkingObject = plugin.getWalkingManager().getWalking(file);
             player.sendMessage("Id " + walkingObject.getNpcId());
@@ -84,6 +86,39 @@ public class WalkingCommand extends SubCommand {
             setForbidden(plugin, player, args);
         } else if (arg.equalsIgnoreCase("create")) {
             createWalking(plugin, player, args);
+        } else if (arg.equalsIgnoreCase("clone")) {
+            if (args.length < 5) {
+                player.sendMessage("Usage: /interactions walk clone <file> <newfile> <npcid>");
+                return;
+            }
+
+            String file = args[2];
+            if (!plugin.getWalkingManager().exists(file)) {
+                player.sendMessage("File not found: " + file);
+                return;
+            }
+
+            String newfile = args[3];
+            if (plugin.getWalkingManager().exists(newfile)) {
+                player.sendMessage("File already exists: " + newfile);
+                return;
+            }
+
+            String npcId = args[4];
+
+            WalkingObject walkingObject = plugin.getWalkingManager().getWalking(file);
+
+            Map<String, Waypoints> newWaypoints = new HashMap<>();
+            if (walkingObject.getWaypoints() != null) {
+                newWaypoints.putAll(walkingObject.getWaypoints());
+            }
+
+            WalkingObject newWalkingObject = new WalkingObject(npcId, walkingObject.getSpeed(), walkingObject.getWalkingMode(),
+                    walkingObject.getRegion(), walkingObject.getStartWaypoint(), newWaypoints, walkingObject.isStopsIfPlayer(),
+                    walkingObject.getStopsIfPlayerBlocks(), walkingObject.getWanderingArea());
+
+            plugin.getWalkingManager().addWalkingObject(newfile, newWalkingObject);
+            player.sendMessage("Done");
         }
     }
 

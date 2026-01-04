@@ -76,7 +76,7 @@ public class Session {
                 return;
             }
             final String message = messages.get(i);
-            long left = plugin.getCooldownManager().getRemainingSeconds(player.getUniqueId(), conversation.getId());
+            long left = plugin.getCooldownManager().getRemainingSeconds(player.getUniqueId(), conversation.getNpcId());
             Bukkit.getScheduler().runTaskLater(ComplexInteractions.getInstance(), () -> {
                 String parsedMessage = PlaceholderAPI.setPlaceholders(player, message)
                         .replace("%player%", player.getName())

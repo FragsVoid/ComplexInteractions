@@ -28,6 +28,10 @@ repositories {
     }
 
     maven { url "https://maven.enginehub.org/repo/" }
+    maven {
+        name = 'citizens-repo'
+        url = 'https://maven.citizensnpcs.co/repo'
+    }
 }
 
 
@@ -39,6 +43,10 @@ dependencies {
     compileOnly("io.th0rgal:oraxen:1.196.0")
     compileOnly("dev.lone:api-itemsadder:4.0.10")
     compileOnly("de.oliver:FancyNpcs:2.8.1")
+    implementation 'com.github.FragsVoid:CustomItems:1.1.1'
+    compileOnly('net.citizensnpcs:citizens-main:2.0.35-SNAPSHOT') {
+        exclude group: '*', module: '*'
+    }
 }
 
 tasks.named('jar') {

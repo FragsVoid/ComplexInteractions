@@ -5,6 +5,7 @@ api-version: '1.21'
 depend:
   - Vault
   - PlaceholderAPI
+  - CustomItems
 softdepend:
   - FancyNpcs
   - Oraxen
@@ -15,3 +16,10 @@ commands:
     description: "Main command of the plugin"
   gethead:
     description: "gets head"
+  mission:
+    description: "Open mission menu"
+    aliases:
+      - mision
+      - misión
+      - misiones
+      - missions

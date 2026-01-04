@@ -1,5 +1,6 @@
 package org.frags.complexInteractions.listener;
 
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -17,10 +18,14 @@ public class QuitListener implements Listener {
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
         plugin.getSessionManager().loadCompletedConversations(event.getPlayer().getUniqueId());
+        Player player = event.getPlayer();
+        plugin.addPlayer(player.getWorld().getName(), player);
     }
 
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         plugin.getSessionManager().endSession(event.getPlayer(), false);
+        Player player = event.getPlayer();
+        plugin.removePlayer(player.getWorld().getName(), player);
     }
 }

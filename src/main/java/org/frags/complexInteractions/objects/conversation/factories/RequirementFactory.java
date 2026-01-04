@@ -4,7 +4,6 @@ import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.frags.complexInteractions.objects.conversation.Requirement;
 import org.frags.complexInteractions.objects.conversation.interfaces.ItemMatcher;
-import org.frags.complexInteractions.objects.conversation.interfaces.ItemProvider;
 import org.frags.complexInteractions.objects.conversation.matchers.MaterialMatcher;
 import org.frags.complexInteractions.objects.conversation.matchers.ModelDataMatcher;
 import org.frags.complexInteractions.objects.conversation.matchers.NormalMatcher;
@@ -12,6 +11,7 @@ import org.frags.complexInteractions.objects.conversation.matchers.PDCMatcher;
 import org.frags.complexInteractions.objects.conversation.requirements.ConditionRequirement;
 import org.frags.complexInteractions.objects.conversation.requirements.ItemRequirement;
 import org.frags.complexInteractions.objects.conversation.requirements.PermissionRequirement;
+import org.frags.customItems.objects.ItemProvider;
 
 public class RequirementFactory {
 

@@ -1,16 +1,13 @@
 package org.frags.complexInteractions.managers;
 
-import org.bukkit.Bukkit;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.frags.complexInteractions.ComplexInteractions;
+import org.frags.complexInteractions.events.MissionCompleteEvent;
 import org.frags.complexInteractions.objects.Session;
 import org.frags.complexInteractions.objects.conversation.Conversation;
 import org.frags.complexInteractions.objects.conversation.ConversationStage;
 
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 public class SessionManager {
 
@@ -136,14 +133,12 @@ public class SessionManager {
             session.cleanup();
             if (completed) {
                 ConversationStage stage = session.getStage();
-                String completes = stage.getCompletesConversation();
-                if (completes != null && completes.equals("no")) {
-                    return;
-                }
+                if (!stage.getCompletesConversation()) return;
                 if (session.getConversation().isOnlyOnce()) {
                     completedConversation(player.getUniqueId(), session.getConversation().getId());
                     return;
                 }
+                plugin.getServer().getPluginManager().callEvent(new MissionCompleteEvent(player, session.getConversation().getId()));
                 long cooldownTime = session.getConversation().getCooldown();
                 if (cooldownTime > 0) {
                     plugin.getCooldownManager().setCooldown(player.getUniqueId(), session.getConversation().getNpcId(), cooldownTime);

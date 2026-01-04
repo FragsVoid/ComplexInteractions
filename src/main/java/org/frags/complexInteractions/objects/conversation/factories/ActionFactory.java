@@ -7,6 +7,7 @@ import org.bukkit.inventory.ItemStack;
 import org.frags.complexInteractions.ComplexInteractions;
 import org.frags.complexInteractions.objects.conversation.Action;
 import org.frags.complexInteractions.objects.conversation.actions.*;
+import org.frags.customItems.CustomItems;
 
 public class ActionFactory {
 
@@ -68,7 +69,7 @@ public class ActionFactory {
             if (newName.startsWith("preset:")) {
                 String preset = newName.replace("preset:", "");
                 String[] parts = preset.split(" ");
-                return new RemoveItemAction(ComplexInteractions.getInstance().getItemManager().getItem(parts[0]), Integer.parseInt(parts[1]), preset);
+                return new RemoveItemAction(CustomItems.INSTANCE.getItemProvider().getItem(parts[0]), Integer.parseInt(parts[1]), preset);
             } else {
                 String[] parts = newName.split(" ");
                 Material material = Material.matchMaterial(parts[0].toUpperCase());
@@ -78,6 +79,24 @@ public class ActionFactory {
                 }
 
                 return new RemoveItemAction(new ItemStack(material), Integer.parseInt(parts[1]), null);
+            }
+        }
+
+        if (configLine.startsWith("[giveitem]")) {
+            String newName = configLine.replace("[giveitem]", "");
+            if (newName.startsWith("preset:")) {
+                String preset = newName.replace("preset:", "");
+                String[] parts = preset.split(" ");
+                return new GiveItemAction(CustomItems.INSTANCE.getItemProvider().getItem(parts[0]), Integer.parseInt(parts[1]), preset);
+            } else {
+                String[] parts = newName.split(" ");
+                Material material = Material.matchMaterial(parts[0].toUpperCase());
+                if (material == null) {
+                    Bukkit.getLogger().warning("[giveitem] is not a valid material");
+                    return null;
+                }
+
+                return new GiveItemAction(new ItemStack(material), Integer.parseInt(parts[1]), null);
             }
         }
 

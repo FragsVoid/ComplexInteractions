@@ -6,11 +6,13 @@ import org.frags.complexInteractions.commands.SubCommand;
 import org.frags.complexInteractions.objects.conversation.*;
 import org.frags.complexInteractions.objects.conversation.factories.ActionFactory;
 import org.frags.complexInteractions.objects.conversation.factories.RequirementFactory;
+import org.frags.customItems.CustomItems;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
 public class ConversationCommand extends SubCommand {
+
     @Override
     public String getName() {
         return "conversation";
@@ -127,7 +129,7 @@ public class ConversationCommand extends SubCommand {
                 }
                 ConversationStage newStage = new ConversationStage(
                         conversation.getId(), newStageId, new ArrayList<>(), 0,
-                        new ArrayList<>(), new ArrayList<>(), null
+                        new ArrayList<>(), new ArrayList<>(), true
                 );
                 conversation.addConversationStage(newStageId, newStage);
                 player.sendMessage("Stage '" + newStageId + "' added.");
@@ -154,7 +156,7 @@ public class ConversationCommand extends SubCommand {
                     return;
                 }
                 String reqStr = getFullString(args, 3);
-                Requirement req = RequirementFactory.parse(reqStr, plugin.getItemManager(), "Requirement failed");
+                Requirement req = RequirementFactory.parse(reqStr, CustomItems.INSTANCE.getItemProvider(), "Requirement failed");
 
                 if (req != null) {
                     conversation.getRequirements().add(req);
@@ -200,6 +202,8 @@ public class ConversationCommand extends SubCommand {
                 player.sendMessage("Unknown command.");
                 break;
         }
+
+        plugin.getConversationManager().saveConversation(conversation);
     }
 
     private String getFullString(String[] args, int startIndex) {
@@ -229,7 +233,7 @@ public class ConversationCommand extends SubCommand {
 
         plugin.getConversationManager().addConversation(npcId, new Conversation(file, npcId, false, false, 0, 0,
                 startStage, null, null, new HashMap<>(), new ArrayList<>(), new ArrayList<>(),
-                0, null, false, null));
+                0, null, false, null, false, null, null, null, null));
         player.sendMessage("Conversation Created");
     }
 
@@ -297,8 +301,8 @@ public class ConversationCommand extends SubCommand {
 
             case "setcompletes":
                 String comp = args[5];
-                stage.setCompletesConversation(comp);
-                player.sendMessage("§aCompletes conversation set to: " + comp);
+                stage.setCompletesConversation(Boolean.parseBoolean(comp));
+                player.sendMessage("Completes conversation set to: " + comp);
                 break;
             case "addoption":
                 if (args.length < 8) {
@@ -340,6 +344,8 @@ public class ConversationCommand extends SubCommand {
             default:
                 player.sendMessage("Unknown stage modification. Available: settext, addtext, removetext, setdelay, addaction, setcompletes, addoption, removeoption, modifyoption");
         }
+
+
     }
 
     private void handleOptionModification(Player player, ConversationStage stage, String[] args) {
@@ -397,7 +403,7 @@ public class ConversationCommand extends SubCommand {
 
             case "addreq":
                 String reqStr = getFullString(args, 7);
-                Requirement req = RequirementFactory.parse(reqStr, ComplexInteractions.getInstance().getItemManager(), "Requirement failed");
+                Requirement req = RequirementFactory.parse(reqStr, CustomItems.INSTANCE.getItemProvider(), "Requirement failed");
                 if (req != null) {
                     option.getRequirements().add(req);
                     player.sendMessage("Requirement added to option.");

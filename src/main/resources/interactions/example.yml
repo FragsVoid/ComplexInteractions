@@ -28,15 +28,14 @@ conversation:
   conversation2:
     dialogue:
       text:
-        - "&7Kryngel is one of the most important cities"
-        - "&7of the nation."
+        - "<gray>Chandelur is the most important city"
       delay: 1
   conversation3:
     dialogue:
       text:
-        - "&7Good luck!"
+        - "<gray>Good luck!"
       delay: 1
   fail:
     dialogue:
       text:
-        - "[npc_name] You are too weak to speak with me."
+        - "<gray>You are too weak to speak with me."
