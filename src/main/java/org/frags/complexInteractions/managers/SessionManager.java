@@ -1,13 +1,16 @@
 package org.frags.complexInteractions.managers;
 
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.frags.complexInteractions.ComplexInteractions;
 import org.frags.complexInteractions.events.MissionCompleteEvent;
 import org.frags.complexInteractions.objects.Session;
 import org.frags.complexInteractions.objects.conversation.Conversation;
 import org.frags.complexInteractions.objects.conversation.ConversationStage;
+import org.frags.complexInteractions.objects.missions.ActiveQuest;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class SessionManager {
 
@@ -16,7 +19,7 @@ public class SessionManager {
     private final Map<UUID, Session> activeSessions = new HashMap<>();
     private final ComplexInteractions plugin;
 
-    private final Map<UUID, Set<String>> completedConversations = new HashMap<>();
+    private final Map<UUID, Set<String>> completedConversations = new ConcurrentHashMap<>();
 
     public SessionManager(ConversationManager conversationManager, ComplexInteractions plugin) {
         this.conversationManager = conversationManager;
@@ -25,27 +28,28 @@ public class SessionManager {
 
     public void loadCompletedConversations(UUID uuid) {
         completedConversations.remove(uuid);
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+           Set<String> completed = plugin.getDatabase().getCompletedConversations(uuid);
 
-        List<String> conversationsId = plugin.getDataFile().getConfig().getStringList("completed." + uuid.toString());
-        if (conversationsId.isEmpty()) return;
-
-        Set<String> conversations = new HashSet<>(conversationsId);
-
-        completedConversations.put(uuid, conversations);
+           Bukkit.getScheduler().runTask(plugin, () -> {
+               if (completed != null && !completed.isEmpty()) {
+                   completedConversations.put(uuid, completed);
+               }
+           });
+        });
     }
 
-    public void saveAllConversations() {
-        for (Map.Entry<UUID, Set<String>> entry : completedConversations.entrySet()) {
-            Set<String> conversations = entry.getValue();
-            if (conversations == null || conversations.isEmpty()) {
-                plugin.getDataFile().getConfig().set("completed." + entry.getKey().toString(), null);
-                continue;
-            }
+    public void unloadPlayer(UUID uuid) {
+        completedConversations.remove(uuid);
+        activeSessions.remove(uuid);
+    }
 
-
-            plugin.getDataFile().getConfig().set("completed." + entry.getKey().toString(), new ArrayList<>(conversations));
+    public boolean addSession(UUID uuid, Session session) {
+        if (activeSessions.containsKey(uuid)) {
+            return false;
         }
-        plugin.getDataFile().saveConfig();
+        activeSessions.put(uuid, session);
+        return true;
     }
 
     public void removeConversation(UUID uuid, String conversationId) {
@@ -57,7 +61,13 @@ public class SessionManager {
             id = conversation.getId();
         }
 
-        completedConversations.computeIfAbsent(uuid, k -> new HashSet<>()).remove(id);
+        if (completedConversations.containsKey(uuid)) {
+            completedConversations.get(uuid).remove(id);
+        }
+
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            plugin.getDatabase().removeCompletedConversation(uuid, id);
+        });
     }
 
     public boolean hasCompleted(UUID uuid, Conversation conversation) {
@@ -76,32 +86,56 @@ public class SessionManager {
 
     public void completedConversation(UUID uuid, String conversation) {
         completedConversations.computeIfAbsent(uuid, k -> new HashSet<>()).add(conversation);
+
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            plugin.getDatabase().addCompletedConversation(uuid, conversation);
+        });
     }
 
     public void startSession(Player player, String conversationId) {
 
         Conversation conversation = conversationManager.getConversation(conversationId);
         if (conversation == null) return;
+
         if (activeSessions.containsKey(player.getUniqueId())) {
             player.sendMessage(ComplexInteractions.miniMessage.deserialize(plugin.getMessage("already_in_conversation")));
             return;
         }
 
-        Session session = new Session(plugin, player, conversation, this);
-
-        if (conversation.isOnlyOnce() && hasCompleted(player.getUniqueId(), conversation.getId())) {
-            ConversationStage alreadyCompletedStage = conversation.getConversationStageMap().get(conversation.getAlreadyCompletedStageId());
-            if (alreadyCompletedStage == null) return;
-
-            session.startStage(alreadyCompletedStage);
-            return;
+        Map<String, ActiveQuest> activeQuests = plugin.getQuestManager().getQuests(player);
+        String questId = conversation.getQuestId();
+        if (activeQuests.containsKey(questId)) {
+            ActiveQuest quest = activeQuests.get(questId);
+            ConversationStage conversationStage;
+            if (quest.isComplete()) {
+                String rewardStageId = conversation.getQuestCompletedConversation();
+                conversationStage = conversation.getStage(rewardStageId);
+            } else {
+                conversationStage = conversation.getStage(conversation.getQuestInProgress());
+            }
+            if (conversationStage != null) {
+                Session session = new Session(plugin, player, conversation, this);
+                activeSessions.put(player.getUniqueId(), session);
+                session.startStage(conversationStage);
+                session.setTurningInQuest(true);
+                return;
+            }
         }
 
         if (plugin.getCooldownManager().isOnCooldown(player.getUniqueId(), conversationId)) {
             ConversationStage cooldownStage = conversation.getConversationStageMap().get(conversation.getCooldownMessage());
             if (cooldownStage == null) return;
-
+            Session session = new Session(plugin, player, conversation, this);
             session.startStage(cooldownStage);
+            return;
+        }
+
+        Session session = new Session(plugin, player, conversation, this);
+        if (conversation.isOnlyOnce() && hasCompleted(player.getUniqueId(), conversation.getId())) {
+            ConversationStage alreadyCompletedStage = conversation.getConversationStageMap().get(conversation.getAlreadyCompletedStageId());
+            if (alreadyCompletedStage == null) return;
+
+            session.startStage(alreadyCompletedStage);
             return;
         }
 
@@ -112,8 +146,6 @@ public class SessionManager {
             session.startStage(noReqConversation);
             return;
         }
-
-
 
         activeSessions.put(player.getUniqueId(), session);
         session.start();
@@ -130,18 +162,44 @@ public class SessionManager {
     public void endSession(Player player, boolean completed) {
         Session session = activeSessions.remove(player.getUniqueId());
         if (session != null) {
+            Conversation conversation = session.getConversation();
             session.cleanup();
             if (completed) {
                 ConversationStage stage = session.getStage();
                 if (!stage.getCompletesConversation()) return;
-                if (session.getConversation().isOnlyOnce()) {
+
+                String questId = conversation.getQuestId();
+
+                Map<String, ActiveQuest> activeQuests = plugin.getQuestManager().getQuests(player);
+                if (questId != null && activeQuests.containsKey(questId)) {
+                    ActiveQuest quest = activeQuests.get(questId);
+
+                    if (quest.isComplete()) {
+
+                        plugin.getQuestManager().removeQuest(player, questId);
+
+                        completedConversation(player.getUniqueId(), conversation.getId());
+
+                        plugin.getServer().getPluginManager().callEvent(new MissionCompleteEvent(player, conversation.getId()));
+
+                        return;
+                    }
+                }
+                if (conversation.isOnlyOnce()) {
                     completedConversation(player.getUniqueId(), session.getConversation().getId());
+                    plugin.getServer().getPluginManager().callEvent(new MissionCompleteEvent(player, session.getConversation().getId()));
                     return;
                 }
                 plugin.getServer().getPluginManager().callEvent(new MissionCompleteEvent(player, session.getConversation().getId()));
                 long cooldownTime = session.getConversation().getCooldown();
                 if (cooldownTime > 0) {
+                    long expiry = System.currentTimeMillis() + (cooldownTime * 1000);
+
                     plugin.getCooldownManager().setCooldown(player.getUniqueId(), session.getConversation().getNpcId(), cooldownTime);
+
+                    Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                        plugin.getDatabase().setCooldown(player.getUniqueId(), session.getConversation().getNpcId(), expiry);
+                    });
                 }
             }
         }

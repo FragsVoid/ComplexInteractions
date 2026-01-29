@@ -129,7 +129,7 @@ public class ConversationCommand extends SubCommand {
                 }
                 ConversationStage newStage = new ConversationStage(
                         conversation.getId(), newStageId, new ArrayList<>(), 0,
-                        new ArrayList<>(), new ArrayList<>(), true
+                        new ArrayList<>(), new ArrayList<>(), true, new ArrayList<>()
                 );
                 conversation.addConversationStage(newStageId, newStage);
                 player.sendMessage("Stage '" + newStageId + "' added.");
@@ -233,7 +233,10 @@ public class ConversationCommand extends SubCommand {
 
         plugin.getConversationManager().addConversation(npcId, new Conversation(file, npcId, false, false, 0, 0,
                 startStage, null, null, new HashMap<>(), new ArrayList<>(), new ArrayList<>(),
-                0, null, false, null, false, null, null, null, null));
+                0, null, false, null, false,
+                null, null, null, null, false, null, null, null,
+                null, null
+        ));
         player.sendMessage("Conversation Created");
     }
 

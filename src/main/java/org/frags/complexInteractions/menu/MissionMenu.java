@@ -83,7 +83,6 @@ public class MissionMenu extends PaginatedMenu<ComplexInteractions, MissionMenuU
         List<Conversation> availableMissions = new ArrayList<>();
 
         for (Conversation c : plugin.getConversationManager().getMissions()) {
-            // Filtro base: Solo una vez
             if (c.isOnlyOnce() && plugin.getSessionManager().hasCompleted(player.getUniqueId(), c)) {
                 continue;
             }
@@ -128,6 +127,11 @@ public class MissionMenu extends PaginatedMenu<ComplexInteractions, MissionMenuU
                 return c1IsMain ? -1 : 1;
             }
 
+            boolean meetsRequirements = c1.meetsRequirement(player);
+            boolean meetsRequirements2 = c2.meetsRequirement(player);
+            if (meetsRequirements != meetsRequirements2) {
+                return meetsRequirements ? -1 : 1;
+            }
 
             String name1 = PlainTextComponentSerializer.plainText().serialize(c1.getMissionName());
             String name2 = PlainTextComponentSerializer.plainText().serialize(c2.getMissionName());
@@ -158,6 +162,20 @@ public class MissionMenu extends PaginatedMenu<ComplexInteractions, MissionMenuU
             if (conversation.getCooldown() > 0) {
                 cooldownSeconds = plugin.getCooldownManager().getRemainingSeconds(player.getUniqueId(), conversation.getNpcId());
                 if (cooldownSeconds > 0) isOnCooldown = true;
+            }
+
+            if (!conversation.meetsRequirement(player)) {
+                lore.add(
+                        ComplexInteractions.miniMessage.deserialize(
+                                "<red>Debes terminar las misiones anteriores"
+                        ).decoration(TextDecoration.ITALIC, false)
+                );
+
+                lore.add(
+                        ComplexInteractions.miniMessage.deserialize(
+                                "<red>para poder realizar esta misión."
+                        ).decoration(TextDecoration.ITALIC, false)
+                );
             }
 
             if (!canStart) {
@@ -240,6 +258,8 @@ public class MissionMenu extends PaginatedMenu<ComplexInteractions, MissionMenuU
 
     private boolean canPlayerStartMission(Player player, Conversation c) {
         if (!checkRequirements(player, c)) return false;
+
+        if (!c.meetsRequirement(player)) return false;
 
         if (c.getCooldown() > 0) {
             if (plugin.getCooldownManager().isOnCooldown(player.getUniqueId(), c.getNpcId())) {

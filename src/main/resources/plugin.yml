@@ -2,6 +2,10 @@ name: ComplexInteractions
 version: '1.0'
 main: org.frags.complexInteractions.ComplexInteractions
 api-version: '1.21'
+libraries:
+  - "com.zaxxer:HikariCP:5.1.0"
+  - "org.xerial:sqlite-jdbc:3.42.0.0"
+  - "org.slf4j:slf4j-api:2.0.7"
 depend:
   - Vault
   - PlaceholderAPI
@@ -12,6 +16,10 @@ softdepend:
   - MMOItems
   - ItemsAdder
 commands:
+  quest:
+    description: "Quest command"
+    aliases:
+      - quests
   interactions:
     description: "Main command of the plugin"
   gethead:

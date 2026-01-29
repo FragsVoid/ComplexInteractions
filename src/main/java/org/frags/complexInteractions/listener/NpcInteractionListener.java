@@ -23,7 +23,10 @@ public class NpcInteractionListener implements Listener {
     @EventHandler
     public void onNpcInteract(NpcInteractEvent event) {
         String nameId = event.getNpc().getData().getName();
+        Conversation conversation = conversationManager.getConversation(nameId);
+        if (conversation == null) return;
 
         sessionManager.startSession(event.getPlayer(), nameId);
+
     }
 }

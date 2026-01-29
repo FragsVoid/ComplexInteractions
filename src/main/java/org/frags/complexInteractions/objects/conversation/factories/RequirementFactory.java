@@ -2,16 +2,20 @@ package org.frags.complexInteractions.objects.conversation.factories;
 
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
+import org.frags.complexInteractions.ComplexInteractions;
 import org.frags.complexInteractions.objects.conversation.Requirement;
 import org.frags.complexInteractions.objects.conversation.interfaces.ItemMatcher;
 import org.frags.complexInteractions.objects.conversation.matchers.MaterialMatcher;
 import org.frags.complexInteractions.objects.conversation.matchers.ModelDataMatcher;
 import org.frags.complexInteractions.objects.conversation.matchers.NormalMatcher;
 import org.frags.complexInteractions.objects.conversation.matchers.PDCMatcher;
+import org.frags.complexInteractions.objects.conversation.requirements.CompletedRequirement;
 import org.frags.complexInteractions.objects.conversation.requirements.ConditionRequirement;
 import org.frags.complexInteractions.objects.conversation.requirements.ItemRequirement;
 import org.frags.complexInteractions.objects.conversation.requirements.PermissionRequirement;
 import org.frags.customItems.objects.ItemProvider;
+
+import java.util.List;
 
 public class RequirementFactory {
 
@@ -30,6 +34,10 @@ public class RequirementFactory {
         }
 
         return null;
+    }
+
+    public static CompletedRequirement parseCompleted(List<String> conversations, String failMessage) {
+        return new CompletedRequirement(failMessage, conversations, ComplexInteractions.getInstance());
     }
 
     private static ItemRequirement parseItem(String params, ItemProvider provider, String failMessage) {

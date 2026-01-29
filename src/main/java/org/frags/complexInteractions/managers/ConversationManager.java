@@ -10,6 +10,7 @@ import org.frags.complexInteractions.ComplexInteractions;
 import org.frags.complexInteractions.objects.conversation.*;
 import org.frags.complexInteractions.objects.conversation.factories.ActionFactory;
 import org.frags.complexInteractions.objects.conversation.factories.RequirementFactory;
+import org.frags.complexInteractions.objects.conversation.requirements.CompletedRequirement;
 import org.frags.customItems.CustomItems;
 
 import java.io.File;
@@ -145,6 +146,14 @@ public class ConversationManager {
                         optionList.add(new Option(optionKey, optionText, startConversation, parsedActions, parsedRequirements, noRequirementId));
                     }
                 }
+                List<String> rawStartActions = section.getStringList("start_actions");
+                List<Action> startActions = new ArrayList<>();
+                for (String line : rawStartActions) {
+                    Action act = ActionFactory.parse(line);
+                    if (act != null)
+                        startActions.add(act);
+                }
+
                 List<String> rawActions = section.getStringList("actions");
                 List<Action> actions = new ArrayList<>();
                 for (String actionKey : rawActions) {
@@ -153,7 +162,7 @@ public class ConversationManager {
                         actions.add(action);
                 }
 
-                conversationStages.put(stageKey, new ConversationStage(conversationId, stageKey, text, delay, actions, optionList, completesConversation));
+                conversationStages.put(stageKey, new ConversationStage(conversationId, stageKey, text, delay, actions, optionList, completesConversation, startActions));
             }
 
             List<Action> interruptActions = new ArrayList<>();
@@ -189,10 +198,22 @@ public class ConversationManager {
             if (iconStr == null) iconStr = "PAPER";
             Material icon = Material.getMaterial(config.getString("icon"));
 
+            boolean custom = config.getBoolean("custom", false);
+
+            String questId = config.getString("quest_id");
+            String questCompleteConversation = config.getString("quest_complete_conversation");
+            String questCompletedConversation = config.getString("quest_completed_conversation");
+            String questInProgressConversation = config.getString("quest_in_progress_conversation");
+
+            List<String> npcRequirements = config.getStringList("npc_requirements");
+
+            CompletedRequirement completedRequirement = RequirementFactory.parseCompleted(npcRequirements, "");
+
             Conversation conversation = new Conversation(
                     conversationId, npcId, blockMovement, slowEffect, startRadius, endRadius, startStageId, noReqStageId,
                     npcName, conversationStages, interruptActions, globalRequirements, cooldown, cooldownStageId, onlyOnce,
-                    alreadyCompletedStageId, isMission, missionCategory, missionName, missionLore, icon
+                    alreadyCompletedStageId, isMission, missionCategory, missionName, missionLore, icon, custom, questId,
+                    questCompleteConversation, questCompletedConversation, questInProgressConversation, completedRequirement
             );
             conversations.put(npcId, conversation);
         }

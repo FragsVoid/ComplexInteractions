@@ -3,6 +3,7 @@ package org.frags.complexInteractions.objects.conversation;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.frags.complexInteractions.objects.conversation.requirements.CompletedRequirement;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +25,14 @@ public class Conversation {
     private String alreadyCompletedStageId;
     private boolean mission;
     private MissionCategory missionCategory;
+    private boolean custom;
+    private String questId;
+    private String questCompleteConversation; //Once the quest is completed
+    private String questCompletedConversation; //When you talk again to the npc after completing the quest
+    private String questInProgress;
+
+    private CompletedRequirement npcRequirement;
+
 
     private Component missionName;
     private List<Component> missionLore;
@@ -44,7 +53,9 @@ public class Conversation {
                         Map<String, ConversationStage> conversationStageMap, List<Action> interruptActions,
                         List<Requirement> requirements, long cooldown, String cooldownMessage, boolean onlyOnce, String alreadyCompletedStageId,
                         boolean isMission, MissionCategory missionCategory,  Component missionName, List<Component> missionLore,
-                        Material icon) {
+                        Material icon, boolean custom, String questId, String questCompleteConversation, String questCompletedConversation, String questInProgress,
+                        CompletedRequirement npcRequirement
+    ) {
         this.id = id;
         this.npcId = npcId;
         this.blockMovement = blockMovement;
@@ -66,6 +77,12 @@ public class Conversation {
         this.missionName = missionName;
         this.missionLore = missionLore;
         this.icon = icon;
+        this.custom = custom;
+        this.questId = questId;
+        this.questCompleteConversation = questCompleteConversation;
+        this.questCompletedConversation = questCompletedConversation;
+        this.questInProgress = questInProgress;
+        this.npcRequirement = npcRequirement;
     }
 
     public boolean canStart(Player player) {
@@ -74,6 +91,30 @@ public class Conversation {
         }
 
         return true;
+    }
+
+    public String getQuestInProgress() {
+        return questInProgress;
+    }
+
+    public String getQuestCompleteConversation() {
+        return questCompleteConversation;
+    }
+
+    public String getQuestCompletedConversation() {
+        return questCompletedConversation;
+    }
+
+    public String getQuestId() {
+        return questId;
+    }
+
+    public boolean meetsRequirement(Player player) {
+        return npcRequirement.check(player);
+    }
+
+    public boolean isCustom() {
+        return custom;
     }
 
     public Material getIcon() {

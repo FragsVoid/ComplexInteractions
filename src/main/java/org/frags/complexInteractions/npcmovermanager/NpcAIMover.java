@@ -1,5 +1,6 @@
 package org.frags.complexInteractions.npcmovermanager;
 
+import de.oliver.fancynpcs.api.Npc;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.*;
@@ -100,6 +101,207 @@ public class NpcAIMover {
                 }
             }
         }
+    }
+
+    public void walkGhost(Npc ghostNpc, String originalNpcId, List<Location> path, Runnable onComplete) {
+        if (path == null || path.isEmpty()) {
+            if (onComplete != null) onComplete.run();
+            return;
+        }
+
+        String taskId = ghostNpc.getData().getId();
+        cancelTask(taskId);
+
+        Location start = ghostNpc.getData().getLocation();
+        removeOldGuides(start, taskId);
+
+        Zombie guide = createGuideZombie(start, taskId);
+
+        new BukkitRunnable() {
+            int attempts = 0;
+            @Override
+            public void run() {
+                attempts++;
+                if (!guide.isValid() || attempts > 10) {
+                    guide.remove();
+                    cancel();
+                    return;
+                }
+
+                if (guide.isOnGround()) {
+                    startPathMoving(taskId, ghostNpc, originalNpcId, guide, path, onComplete);
+                    cancel();
+                }
+            }
+        }.runTaskTimer(plugin, 2L, 2L);
+    }
+
+    private void startPathMoving(String taskId, Npc ghostNpc, String originalNpcId, Zombie guide, List<Location> path, Runnable onComplete) {
+
+        guide.getPathfinder().moveTo(path.getFirst());
+
+        BukkitTask task = new BukkitRunnable() {
+            int currentTargetIndex = 0;
+            int stuckTimer= 0;
+            @Override
+            public void run() {
+                if (isCancelled() || !guide.isValid() || guide.isDead()) {
+                    cleanup();
+                    return;
+                }
+                stuckTimer++;
+
+                Location currentLoc = guide.getLocation();
+                plugin.getNpcAdapter().updateNpcInstanceLocation(ghostNpc, currentLoc);
+
+                Location target = path.get(currentTargetIndex);
+
+                if (!currentLoc.getWorld().equals(target.getWorld())) {
+                    guide.teleport(target);
+                    currentLoc = target;
+                }
+
+                if (currentLoc.distanceSquared(target) < 1.25 || stuckTimer > 1000) {
+                    if (stuckTimer > 1000) {
+                        guide.teleport(target);
+                    }
+                    currentTargetIndex++;
+                    stuckTimer = 0;
+
+                    if (currentTargetIndex >= path.size()) {
+                        if (onComplete != null) onComplete.run();
+                        cleanup();
+                        return;
+                    }
+
+                    guide.getPathfinder().moveTo(path.get(currentTargetIndex), 0.8);
+                }
+
+                if (!guide.getPathfinder().hasPath()) {
+                    guide.getPathfinder().moveTo(path.get(currentTargetIndex), 0.8);
+                }
+            }
+
+            private void cleanup() {
+                activeTasks.remove(taskId);
+                guide.remove();
+                cancel();
+            }
+
+        }.runTaskTimer(plugin, 0L, 1L);
+
+        activeTasks.put(taskId, new ActiveNpcContext(guide, task));
+    }
+
+    public void walkTo(String npcId,  Location target, Runnable onComplete) {
+        cancelTask(npcId);
+
+        if (npcAdapter.isValid(plugin, npcId)) return;
+
+        Location start = npcAdapter.getLocation(plugin, npcId);
+        removeOldGuides(start, npcId);
+
+        Chicken guide = createGuide(start, npcId);
+
+        new BukkitRunnable() {
+            int attempts = 0;
+            @Override
+            public void run() {
+                attempts++;
+                if (!guide.isValid() || attempts > 10) {
+                    guide.remove();
+                    cancel();
+                    return;
+                }
+
+                if (guide.isOnGround()) {
+                    startDirectedMove(npcId, guide, target, onComplete);
+                    cancel();
+                }
+            }
+        }.runTaskTimer(plugin, 2L, 2L);
+    }
+
+    private void startDirectedMove(String npcId, Chicken guide, Location target, Runnable onComplete) {
+        guide.getPathfinder().moveTo(target);
+
+        BukkitTask task = new BukkitRunnable() {
+            Location lastLocation = null;
+            int stuckCounter = 0;
+            @Override
+            public void run() {
+                if (isCancelled() || !guide.isValid() || guide.isDead()) {
+                    activeTasks.remove(npcId);
+                    if (guide.isValid()) guide.remove();
+                    cancel();
+                    return;
+                }
+
+                Location currentLoc = guide.getLocation();
+
+                npcAdapter.updateNpcLocation(plugin, npcId, currentLoc);
+
+                if (currentLoc.getWorld().equals(target.getWorld()) && currentLoc.distanceSquared(target) < 0.5) {
+                    if (onComplete != null) onComplete.run();
+                    cleanup();
+                    return;
+                }
+
+                if (!guide.getPathfinder().hasPath()) {
+                    boolean canMove = guide.getPathfinder().moveTo(target);
+                    if (!canMove) {
+                        cleanup();
+                    }
+                }
+            }
+
+            private void cleanup() {
+                activeTasks.remove(npcId);
+                guide.remove();
+                cancel();
+            }
+        }.runTaskTimer(plugin, 0L, 1L);
+
+        activeTasks.put(npcId, new ActiveNpcContext(guide, task));
+    }
+
+    private Zombie createGuideZombie(Location start, String npcId) {
+        return start.getWorld().spawn(start, Zombie.class, v -> {
+            v.setPersistent(true);
+            v.setRemoveWhenFarAway(false);
+            v.setInvulnerable(true);
+            v.setSilent(true);
+            v.setCollidable(false);
+            v.setInvisible(true);
+
+            v.setBaby(true);
+            v.setShouldBurnInDay(false);
+
+            v.getEquipment().clear();
+
+            v.addScoreboardTag("npc_villager_interactions");
+            v.addScoreboardTag("guide_npc_" + npcId);
+
+            v.setAI(true);
+
+            Bukkit.getMobGoals().removeAllGoals(v);
+        });
+    }
+
+    private Chicken createGuide(Location start, String npcId) {
+        return start.getWorld().spawn(start, Chicken.class, v -> {
+            v.setPersistent(true);
+            v.setRemoveWhenFarAway(false);
+            v.setInvulnerable(true);
+            v.setSilent(true);
+            v.setCollidable(false);
+            v.setInvisible(true);
+            v.addScoreboardTag("npc_villager_interactions");
+            v.addScoreboardTag("guide_npc_" + npcId);
+            v.setAI(true);
+
+            Bukkit.getMobGoals().removeAllGoals(v);
+        });
     }
 
     private void startMoving(String npcId, WalkingObject walkingObject, Chicken guide) {
@@ -266,13 +468,6 @@ public class NpcAIMover {
         }
     }
 
-    private static class ActiveNpcContext {
-        final BukkitTask activeTask;
-        final Chicken guide;
-
-        public ActiveNpcContext(Chicken guide, BukkitTask activeTask) {
-            this.guide = guide;
-            this.activeTask = activeTask;
-        }
+    private record ActiveNpcContext(LivingEntity guide, BukkitTask activeTask) {
     }
 }

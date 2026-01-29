@@ -8,6 +8,7 @@ import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Sound;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.attribute.AttributeModifier;
@@ -35,7 +36,11 @@ public class Session {
     private Player player;
     private boolean ended = false;
 
-    private ComplexInteractions plugin;
+    private final ComplexInteractions plugin;
+
+    private boolean isTurningInQuest = false;
+
+    private boolean waitingForMovement = false;
 
     public Session(ComplexInteractions plugin, Player player, Conversation conversation, SessionManager sessionManager) {
         this.conversation = conversation;
@@ -68,6 +73,12 @@ public class Session {
     }
 
     private void startConversationStage(ConversationStage stage) {
+        if (stage.getStartActions() != null) {
+            for (Action action : stage.getStartActions()) {
+                action.execute(player);
+            }
+        }
+
         List<String> messages = stage.getText();
 
         for (int i = 0; i < messages.size(); i++) {
@@ -82,11 +93,18 @@ public class Session {
                         .replace("%player%", player.getName())
                         .replace("%time%", sessionManager.getRemainingTimeFormatted(left));
                 player.sendMessage(MiniMessage.miniMessage().deserialize(parsedMessage));
+                player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
             }, stage.getDelay() * i * 20);
         }
 
+        long totalDuration = stage.getDelay() * messages.size() * 20;
+
         if (stage.getOptionList() == null || stage.getOptionList().isEmpty()) {
-            Bukkit.getScheduler().runTaskLater(ComplexInteractions.getInstance(), () -> sessionManager.endSession(player, true), stage.getDelay() * 20 * messages.size());
+            Bukkit.getScheduler().runTaskLater(ComplexInteractions.getInstance(), () -> {
+                if (!waitingForMovement) {
+                    sessionManager.endSession(player, true);
+                }
+            }, totalDuration);
         }
 
         Bukkit.getScheduler().runTaskLater(ComplexInteractions.getInstance(), () -> {
@@ -119,50 +137,51 @@ public class Session {
                 return;
             }
             Option option = options.get(i);
-            Bukkit.getScheduler().runTaskLater(ComplexInteractions.getInstance(), () -> {
-                if (!sessionManager.isConversing(player)) return;
+            if (!sessionManager.isConversing(player)) return;
 
-                String parsedMessage = PlaceholderAPI.setPlaceholders(player, option.getText());
+            String parsedMessage = PlaceholderAPI.setPlaceholders(player, option.getText());
 
-                Component optionText = MiniMessage.miniMessage().deserialize(parsedMessage);
+            Component optionText = MiniMessage.miniMessage().deserialize(parsedMessage);
 
-                Component finalMessage = optionText.clickEvent(ClickEvent.callback((audience) -> {
-                    if (alreadyClicked.get()) return;
-                    alreadyClicked.set(true);
-                    if (audience instanceof Player p) {
-                        if (!option.hasRequirements(p)) {
-                            ConversationStage nextStage = conversation.getStage(option.getNoRequirementId());
-                            if (nextStage != null) {
-                                this.startStage(nextStage);
-                            } else {
-                                sessionManager.endSession(player, false);
-                            }
-                            return;
-                        }
-
-                        option.getOnClickActions().forEach(a -> {a.execute(p);});
-
-                        String nextId = option.getNextStage();
-                        if (nextId == null) {
-                            sessionManager.endSession(p, true);
+            Component finalMessage = optionText.clickEvent(ClickEvent.callback((audience) -> {
+                if (alreadyClicked.get()) return;
+                alreadyClicked.set(true);
+                if (audience instanceof Player p) {
+                    if (!option.hasRequirements(p)) {
+                        ConversationStage nextStage = conversation.getStage(option.getNoRequirementId());
+                        if (nextStage != null) {
+                            this.startStage(nextStage);
                         } else {
-                            ConversationStage nextStage = conversation.getStage(nextId);
-                            if (nextStage != null) {
-                                this.startStage(nextStage);
-                            } else {
-                                sessionManager.endSession(p, true);
-                            }
+                            sessionManager.endSession(player, false);
+                        }
+                        return;
+                    }
+
+                    option.getOnClickActions().forEach(a -> {a.execute(p);});
+                    String nextId = option.getNextStage();
+                    if (nextId == null) {
+                        sessionManager.endSession(p, true);
+                    } else {
+                        ConversationStage nextStage = conversation.getStage(nextId);
+                        if (nextStage != null) {
+                            this.startStage(nextStage);
+                        } else {
+                            sessionManager.endSession(p, true);
                         }
                     }
-                }, ClickCallback.Options.builder()
-                        .uses(1)
-                        .lifetime(Duration.ofMinutes(1))
-                        .build()));
+                }
+            }, ClickCallback.Options.builder()
+                    .uses(1)
+                    .lifetime(Duration.ofMinutes(1))
+                    .build()));
 
 
-                player.sendMessage(finalMessage);
-            }, stage.getDelay() * i * 20);
+            player.sendMessage(finalMessage);
         }
+    }
+
+    public boolean isWaitingForMovement() {
+        return waitingForMovement;
     }
 
     public boolean isEnded() {
@@ -174,6 +193,18 @@ public class Session {
         if (ended) {
             sessionManager.endSession(player, false);
         }
+    }
+
+    public void setWaitingForMovement(boolean waitingForMovement) {
+        this.waitingForMovement = waitingForMovement;
+    }
+
+    public void setTurningInQuest(boolean turningInQuest) {
+        isTurningInQuest = turningInQuest;
+    }
+
+    public boolean isTurningInQuest() {
+        return isTurningInQuest;
     }
 
     public Conversation getConversation() {

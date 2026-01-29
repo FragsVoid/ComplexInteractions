@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'org.frags'
-version = '1.0'
+version = '1.1'
 
 repositories {
     mavenCentral()
@@ -32,6 +32,7 @@ repositories {
         name = 'citizens-repo'
         url = 'https://maven.citizensnpcs.co/repo'
     }
+    maven { url 'https://mvn.lumine.io/repository/maven-public/' }
 }
 
 
@@ -47,6 +48,9 @@ dependencies {
     compileOnly('net.citizensnpcs:citizens-main:2.0.35-SNAPSHOT') {
         exclude group: '*', module: '*'
     }
+    compileOnly("io.lumine:Mythic-Dist:5.6.1")
+    compileOnly "com.zaxxer:HikariCP:5.1.0"
+    compileOnly 'org.xerial:sqlite-jdbc:3.42.0.0'
 }
 
 

@@ -1,3 +1,16 @@
+use_mysql: false #Tienes que reiniciar al cambiar esta opción
+
+mysql:
+  host: "127.0.0.1"
+  port: "3306"
+  database: "skin_manager"
+  username: "root"
+  password: ""
+  useSSL: false
+
+npc_to_dissapear: #Npcs that will not be shown to player if mission has ended
+  - "test"
+
 default:
   filler_item:
     material: GRAY_STAINED_GLASS_PANE

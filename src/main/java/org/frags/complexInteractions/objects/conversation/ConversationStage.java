@@ -8,11 +8,12 @@ public class ConversationStage {
     private String id;
     private List<String> text;
     private long delay;
+    private List<Action> startActions;
     private List<Action> actions;
     private List<Option> optionList;
     private boolean completesConversation;
 
-    public ConversationStage(String conversation, String id, List<String> text, long delay, List<Action> actions, List<Option> optionList, boolean completesConversation) {
+    public ConversationStage(String conversation, String id, List<String> text, long delay, List<Action> actions, List<Option> optionList, boolean completesConversation, List<Action> startActions) {
         this.conversation = conversation;
         this.id = id;
         this.text = text;
@@ -20,6 +21,11 @@ public class ConversationStage {
         this.actions = actions;
         this.optionList = optionList;
         this.completesConversation = completesConversation;
+        this.startActions = startActions;
+    }
+
+    public List<Action> getStartActions() {
+        return startActions;
     }
 
     public boolean getCompletesConversation() {

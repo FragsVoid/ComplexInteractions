@@ -1,5 +1,6 @@
 package org.frags.complexInteractions.managers;
 
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.frags.complexInteractions.ComplexInteractions;
 
@@ -7,32 +8,49 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class CooldownManager {
 
-    private final Map<UUID, Map<String, Long>> cooldowns = new HashMap<>();
+    private final Map<UUID, Map<String, Long>> cooldowns = new ConcurrentHashMap<>();
 
     private final ComplexInteractions plugin;
 
     public CooldownManager(ComplexInteractions plugin) {
         this.plugin = plugin;
+    }
 
-        loadCooldowns();
+    public void loadPlayerCooldowns(UUID uuid) {
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+           Map<String, Long> loaded = plugin.getDatabase().getCooldowns(uuid);
+
+           Bukkit.getScheduler().runTask(plugin, () -> {
+              if (!loaded.isEmpty()) {
+                  cooldowns.put(uuid, loaded);
+              }
+           });
+        });
+    }
+
+    public void unloadPlayer(UUID uuid) {
+        cooldowns.remove(uuid);
     }
 
     public boolean isOnCooldown(UUID playerUUID, String cooldownId) {
         if (!cooldowns.containsKey(playerUUID)) return false;
 
         Map<String, Long> cooldown = cooldowns.get(playerUUID);
-
         Long expiry = cooldown.get(cooldownId);
+
         if (expiry == null) return false;
 
         if (System.currentTimeMillis() >= expiry) {
             cooldown.remove(cooldownId);
             if (cooldown.isEmpty()) cooldowns.remove(playerUUID);
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDatabase().removeCooldown(playerUUID, cooldownId));
             return false;
         }
+
 
         return true;
     }
@@ -44,70 +62,30 @@ public class CooldownManager {
     }
 
     public void resetCooldown(UUID playerUUID, String cooldownId) {
-        Map<String, Long> cooldown = cooldowns.get(playerUUID);
-        if (cooldown == null) return;
-        cooldown.remove(cooldownId);
-        if (cooldown.isEmpty()) cooldowns.remove(playerUUID);
+        if (cooldowns.containsKey(playerUUID)) {
+            Map<String, Long> playerCooldowns = cooldowns.get(playerUUID);
+            playerCooldowns.remove(cooldownId);
+            if (playerCooldowns.isEmpty()) {
+                cooldowns.remove(playerUUID);
+            }
+        }
+
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            plugin.getDatabase().removeCooldown(playerUUID, cooldownId);
+        });
     }
 
     public void setCooldown(UUID playerUUID, String cooldownId, long seconds) {
         if (seconds <= 0) return;
 
-        cooldowns.computeIfAbsent(playerUUID, k -> new HashMap<>())
-                .put(cooldownId, System.currentTimeMillis() + seconds * 1000);
+        long expiry = System.currentTimeMillis() + (seconds * 1000);
+
+        cooldowns.computeIfAbsent(playerUUID, k -> new ConcurrentHashMap<>())
+                .put(cooldownId, expiry);
+
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            plugin.getDatabase().setCooldown(playerUUID, cooldownId, expiry);
+        });
     }
 
-    public void saveCooldowns() {
-        if (cooldowns.isEmpty()) return;
-
-        long now = System.currentTimeMillis();
-
-        for (Map.Entry<UUID, Map<String, Long>> entry : cooldowns.entrySet()) {
-            String uuidString = entry.getKey().toString();
-            Map<String, Long> playerCooldowns = entry.getValue();
-
-            for (Map.Entry<String, Long> cooldownEntry : playerCooldowns.entrySet()) {
-                String cooldownId = cooldownEntry.getKey();
-                long expiry = cooldownEntry.getValue();
-
-                if (expiry > now) {
-                    plugin.getDataFile().getConfig().set("cooldowns." + uuidString + "." + cooldownId, expiry);
-                }
-            }
-        }
-
-        plugin.getDataFile().saveConfig();
-    }
-
-    public void saveCooldownsAsync() {
-        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, this::saveCooldowns);
-    }
-
-    private void loadCooldowns() {
-        ConfigurationSection section = plugin.getDataFile().getConfig().getConfigurationSection("cooldowns");
-
-        if (section == null) return;
-
-        long now = System.currentTimeMillis();
-
-        for (String uuidString : section.getKeys(false)) {
-            try {
-                UUID uuid = UUID.fromString(uuidString);
-                ConfigurationSection playerSection = section.getConfigurationSection(uuidString);
-
-                if (playerSection == null) continue;
-
-                for (String cooldownId : playerSection.getKeys(false)) {
-                    long expiry = playerSection.getLong(cooldownId);
-
-                    if (expiry > now) {
-                        cooldowns.computeIfAbsent(uuid, k -> new HashMap<>())
-                                .put(cooldownId, expiry);
-                    }
-                }
-            } catch (IllegalArgumentException e) {
-                plugin.getLogger().warning("Invalid cooldown id '" + uuidString + "'");
-            }
-        }
-    }
 }
