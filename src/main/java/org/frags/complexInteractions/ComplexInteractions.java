@@ -20,6 +20,7 @@ import org.frags.complexInteractions.npcmovermanager.NpcAIMover;
 import org.frags.complexInteractions.objects.DataStorage;
 import org.frags.complexInteractions.objects.conversation.adapters.FancyNpcsHandler;
 import org.frags.complexInteractions.objects.conversation.interfaces.NpcAdapter;
+import org.frags.complexInteractions.objects.missions.ActiveQuest;
 
 import java.io.File;
 import java.util.*;
@@ -138,6 +139,8 @@ public final class ComplexInteractions extends JavaPlugin {
             walkingManager.getNpcAIMover().cancelAll();
             walkingManager.save();
         }
+
+        questManager.saveAllData();
     }
 
     public void loadNpcs() {

@@ -308,7 +308,12 @@ public class NpcAIMover {
         if (activeTasks.containsKey(npcId)) return;
 
         Location currentLocation = npcAdapter.getLocation(plugin, npcId);
-        Location centerLocation = walkingObject.getWaypoint(walkingObject.getStartWaypoint()).getLocation();
+        Location centerLocation;
+        if (walkingObject.getStartWaypoint() == null || walkingObject.getWaypoint(walkingObject.getStartWaypoint()) == null) {
+            centerLocation = currentLocation;
+        } else {
+            centerLocation = walkingObject.getWaypoint(walkingObject.getStartWaypoint()).getLocation();
+        }
         if (centerLocation == null) centerLocation = currentLocation;
 
         boolean isWandering = walkingObject.getWalkingMode() == WalkingMode.WANDER;

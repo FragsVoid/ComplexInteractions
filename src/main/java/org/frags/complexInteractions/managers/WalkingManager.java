@@ -149,12 +149,26 @@ public class WalkingManager {
     }
 
     public void save() {
+        save(null);
+    }
+
+    public void save(String targetId) {
         File folder = new File(plugin.getDataFolder(), "movePaths");
         if (!folder.exists()) {
             folder.mkdirs();
         }
 
-        for (Map.Entry<String, WalkingObject> entry : walkingObjectMap.entrySet()) {
+        Map<String, WalkingObject> objectsToSave = new HashMap<>();
+
+        if (targetId != null) {
+            if (walkingObjectMap.containsKey(targetId)) {
+                objectsToSave.put(targetId, walkingObjectMap.get(targetId));
+            }
+        } else {
+            objectsToSave.putAll(walkingObjectMap);
+        }
+
+        for (Map.Entry<String, WalkingObject> entry : objectsToSave.entrySet()) {
             String walkingPathId = entry.getKey();
             WalkingObject obj = entry.getValue();
 
@@ -183,21 +197,33 @@ public class WalkingManager {
 
             config.set("waypoints", null);
 
-            config.set("first_point", obj.getWanderingArea().getMinLocation());
-            config.set("second_point", obj.getWanderingArea().getMaxLocation());
+            if (obj.getWanderingArea() != null) {
+                config.set("first_point", obj.getWanderingArea().getMinLocation());
+                config.set("second_point", obj.getWanderingArea().getMaxLocation());
+            } else {
+                config.set("first_point", null);
+                config.set("second_point", null);
+            }
 
             ConfigurationSection configSection = config.getConfigurationSection("forbidden");
             if (configSection == null) {
                 configSection = config.createSection("forbidden");
             }
-            World world = obj.getWanderingArea().getMaxLocation().getWorld();
-            int counter = 0;
-            for (BoundingBox box : obj.getWanderingArea().getForbiddenZones()) {
-                counter++;
-                Location firstLocation = new Location(world, box.getMinX(), box.getMinY(), box.getMinZ());
-                Location secondLocation = new Location(world, box.getMaxX(), box.getMaxY(), box.getMaxZ());
-                configSection.set(counter + ".firstLocation", firstLocation);
-                configSection.set(counter + ".secondLocation", secondLocation);
+
+            World world = null;
+            if(obj.getWanderingArea() != null && obj.getWanderingArea().getMaxLocation() != null) {
+                world = obj.getWanderingArea().getMaxLocation().getWorld();
+            }
+
+            if (world != null) {
+                int counter = 0;
+                for (BoundingBox box : obj.getWanderingArea().getForbiddenZones()) {
+                    counter++;
+                    Location firstLocation = new Location(world, box.getMinX(), box.getMinY(), box.getMinZ());
+                    Location secondLocation = new Location(world, box.getMaxX(), box.getMaxY(), box.getMaxZ());
+                    configSection.set(counter + ".firstLocation", firstLocation);
+                    configSection.set(counter + ".secondLocation", secondLocation);
+                }
             }
 
             if (obj.getWaypoints() != null) {
@@ -208,7 +234,6 @@ public class WalkingManager {
                     String path = "waypoints." + wpKey;
 
                     config.set(path + ".location", wp.getLocation());
-
                     config.set(path + ".possible_locations", wp.getPossibleNextLocations());
                 }
             }

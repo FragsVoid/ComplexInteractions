@@ -40,6 +40,7 @@ public class AvoidForbiddenGoal implements Goal<Chicken> {
     public boolean shouldActivate() {
         if (System.currentTimeMillis() - lastCalculationTime < 1000) return false;
         lastCalculationTime = System.currentTimeMillis();
+        if (walkingObject.getWanderingArea() == null) return false;
         if (mob.getPathfinder().hasPath()) return false;
 
         Location finalDest = walkingObject.getWanderingArea().getRandomLocation();

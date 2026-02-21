@@ -2,7 +2,10 @@ package org.frags.complexInteractions.commands.subcommands.walkcommands;
 
 import de.oliver.fancynpcs.api.FancyNpcsPlugin;
 import de.oliver.fancynpcs.api.Npc;
+import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
+import org.bukkit.util.BoundingBox;
 import org.frags.complexInteractions.ComplexInteractions;
 import org.frags.complexInteractions.commands.SubCommand;
 import org.frags.complexInteractions.objects.walking.WalkingMode;
@@ -42,6 +45,11 @@ public class WalkingCommand extends SubCommand {
             return;
         }
 
+        if (args.length < 2) {
+            player.sendMessage("Usage: " + getSyntax() + " <subcommand>");
+            return;
+        }
+
         String arg = args[1];
 
         if (arg.equalsIgnoreCase("npc")) {
@@ -75,10 +83,13 @@ public class WalkingCommand extends SubCommand {
             player.sendMessage("Id " + walkingObject.getNpcId());
             player.sendMessage("Start " + walkingObject.getStartWaypoint());
             List<Waypoints> waypoints = walkingObject.getAllWaypoints();
-            player.sendMessage("Locations: " + waypoints.toString());
-            player.sendMessage("List of waypoints per: ");
-            for (Waypoints waypoint : waypoints) {
-                player.sendMessage(waypoint.getLocationId() + " " + waypoint.getPossibleNextLocations().toString());
+            player.sendMessage("Locations: " + (waypoints != null ? waypoints.toString() : "None"));
+
+            if (waypoints != null) {
+                player.sendMessage("List of waypoints per: ");
+                for (Waypoints waypoint : waypoints) {
+                    player.sendMessage(waypoint.getLocationId() + " " + waypoint.getPossibleNextLocations().toString());
+                }
             }
         } else if (arg.equalsIgnoreCase("setarea")) {
             setArea(plugin, player, args);
@@ -118,7 +129,8 @@ public class WalkingCommand extends SubCommand {
                     walkingObject.getStopsIfPlayerBlocks(), walkingObject.getWanderingArea());
 
             plugin.getWalkingManager().addWalkingObject(newfile, newWalkingObject);
-            player.sendMessage("Done");
+            plugin.getWalkingManager().save(newfile);
+            player.sendMessage("Done and saved!");
         }
     }
 
@@ -148,7 +160,8 @@ public class WalkingCommand extends SubCommand {
         plugin.getWalkingManager().addWalkingObject(file, new WalkingObject(npcId, speed, walkingMode, null,
                 null, new HashMap<>(), false, 0, null));
 
-        player.sendMessage("Successfully created walking object.");
+        plugin.getWalkingManager().save(file);
+        player.sendMessage("Successfully created and saved walking object.");
     }
 
     public void setForbidden(ComplexInteractions plugin, Player player, String[] args) {
@@ -167,6 +180,8 @@ public class WalkingCommand extends SubCommand {
         String zoneId = args[4];
         WalkingObject walkingObject = plugin.getWalkingManager().getWalking(file);
 
+        boolean changed = false;
+
         if (action.equalsIgnoreCase("add")) {
             if (args.length != 6) {
                 player.sendMessage("Usage: ... add <zoneId> <pos1|pos2>");
@@ -178,10 +193,12 @@ public class WalkingCommand extends SubCommand {
             if (point.equalsIgnoreCase("pos1")) {
                 walkingObject.setForbiddenPos1(zoneId, player.getLocation());
                 player.sendMessage("Forbidden Zone '" + zoneId + "' Pos1 set!");
+                changed = true;
             } else if (point.equalsIgnoreCase("pos2")) {
                 boolean success = walkingObject.createForbiddenZone(zoneId, player.getLocation());
                 if (success) {
                     player.sendMessage("Forbidden Zone '" + zoneId + "' created successfully!");
+                    changed = true;
                 } else {
                     player.sendMessage("Error: Set Pos1 first using /... add " + zoneId + " pos1");
                 }
@@ -190,6 +207,11 @@ public class WalkingCommand extends SubCommand {
         } else if (action.equalsIgnoreCase("remove")) {
             walkingObject.removeForbiddenZone(zoneId);
             player.sendMessage("Forbidden Zone '" + zoneId + "' removed.");
+            changed = true;
+        }
+
+        if (changed) {
+            plugin.getWalkingManager().save(file);
         }
     }
 
@@ -222,7 +244,8 @@ public class WalkingCommand extends SubCommand {
 
         if (walkingObject.getAreaPos1() != null && walkingObject.getAreaPos2() != null) {
             walkingObject.updateWanderingArea();
-            player.sendMessage("Wandering Area successfully updated!");
+            plugin.getWalkingManager().save(file);
+            player.sendMessage("Wandering Area successfully updated and saved!");
         }
     }
 
@@ -241,6 +264,7 @@ public class WalkingCommand extends SubCommand {
 
         String npc = args[3];
         plugin.getWalkingManager().getWalking(file).setNpc(npc);
+        plugin.getWalkingManager().save(file);
         player.sendMessage("Done!");
     }
 
@@ -266,6 +290,7 @@ public class WalkingCommand extends SubCommand {
         }
 
         plugin.getWalkingManager().getWalking(file).setSpeed(speed);
+        plugin.getWalkingManager().save(file);
         player.sendMessage("Done!");
     }
 
@@ -290,6 +315,7 @@ public class WalkingCommand extends SubCommand {
         }
 
         plugin.getWalkingManager().getWalking(file).setWalkingMode(walkingMode);
+        plugin.getWalkingManager().save(file);
         player.sendMessage("Done!");
     }
 
@@ -308,6 +334,7 @@ public class WalkingCommand extends SubCommand {
         String startWaypoint = args[3];
 
         plugin.getWalkingManager().getWalking(file).setStartWaypoint(startWaypoint);
+        plugin.getWalkingManager().save(file);
         player.sendMessage("Done!");
     }
 
@@ -328,6 +355,7 @@ public class WalkingCommand extends SubCommand {
         boolean stops = Boolean.parseBoolean(stopsStr);
 
         plugin.getWalkingManager().getWalking(file).setStopsIfPlayer(stops);
+        plugin.getWalkingManager().save(file);
         player.sendMessage("Done!");
     }
 
@@ -353,6 +381,7 @@ public class WalkingCommand extends SubCommand {
         }
 
         plugin.getWalkingManager().getWalking(file).setStopsIfPlayerBlocks(blocks);
+        plugin.getWalkingManager().save(file);
         player.sendMessage("Done!");
     }
 
@@ -366,6 +395,7 @@ public class WalkingCommand extends SubCommand {
 
         if (!plugin.getWalkingManager().exists(file)) {
             player.sendMessage("File not found: " + file);
+            return;
         }
 
         String id = args[3];
@@ -382,6 +412,7 @@ public class WalkingCommand extends SubCommand {
 
         Waypoints waypoint = new Waypoints(plugin.getWalkingManager(), file, id, player.getLocation(), null);
         walkingObject.addWaypoint(waypoint);
+        plugin.getWalkingManager().save(file);
         player.sendMessage("Done!");
     }
 
@@ -395,6 +426,7 @@ public class WalkingCommand extends SubCommand {
 
         if (!plugin.getWalkingManager().exists(file)) {
             player.sendMessage("File not found: " + file);
+            return;
         }
 
         String id = args[3];
@@ -405,6 +437,7 @@ public class WalkingCommand extends SubCommand {
         for (Waypoints waypoint : waypoints) {
             if (waypoint.getLocationId().equalsIgnoreCase(id)) {
                 waypoint.addPossibleNextLocations(possibleId);
+                plugin.getWalkingManager().save(file);
                 player.sendMessage("Added possible location: " + possibleId);
                 return;
             }
